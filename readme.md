@@ -38,14 +38,37 @@
 | 桌面悬浮 | 透明置顶、拖动与位置记忆、折叠、透明边缘穿透、手动全窗穿透、全局快捷键 |
 | 本地助手连接 | Unix socket / Windows named pipe，按调用方授权读取状态、控制听写和读取页面描述 |
 
-## 直接使用构建产物
+## 启动方式
 
-本地构建输出：
+### macOS
 
-- macOS Apple Silicon：`build/bin/Cue.app`，打包文件 `build/bin/Cue-macos-arm64.zip`。
-- Windows x64：`build/bin/windows-amd64/Cue.exe`，打包文件 `build/bin/Cue-windows-amd64.zip`。
+已有构建产物时，在 Finder 中进入项目的 `build/bin/` 目录，双击 **Cue.app** 即可启动。下次使用仍然双击它，无需每次编译或启动前端服务。也可以在项目根目录打开终端执行：
 
-Windows 请解压整个压缩包，保留 `Cue.exe` 旁的 `sherpa/` 目录，以及使用可选 Whisper 时的 `whisper/` 目录。首次运行需要 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。中文流式运行时和模型随构建包提供；Whisper 模型不预装，需进入“设置 → 音频 → Whisper 本地模型管理”按需下载。
+```bash
+open build/bin/Cue.app
+```
+
+如果使用 `Cue-macos-arm64.zip`，先解压，再打开其中的 `Cue.app`。可将应用放入“应用程序”目录，以后从启动台或 Spotlight 搜索 **Cue** 启动；放入该目录后，终端命令为：
+
+```bash
+open /Applications/Cue.app
+```
+
+启动后默认只有一条悬浮菜单条，点击“显示”展开回答面板，点击齿轮打开设置；设置、指南、透明度按钮再次点击即可关闭对应面板。点击菜单条最右侧的退出按钮可退出应用。
+
+### Windows
+
+解压整个 `Cue-windows-amd64.zip`，打开解压目录，双击 **Cue.exe**。本地构建后的程序位于 `build/bin/windows-amd64/Cue.exe`；也可在项目根目录用 PowerShell 启动：
+
+```powershell
+Start-Process .\build\bin\windows-amd64\Cue.exe
+```
+
+保留 `Cue.exe` 旁的 `sherpa/` 目录，以及使用可选 Whisper 时的 `whisper/` 目录，不要只复制 EXE。可为 `Cue.exe` 创建桌面快捷方式，方便下次启动。首次运行需要 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。中文流式运行时和模型随构建包提供；Whisper 模型不预装，需进入“设置 → 音频 → Whisper 本地模型管理”按需下载。
+
+### 只有源码时
+
+从 GitHub 克隆源码后，需要先按下方[开发环境](#开发环境)安装依赖并执行构建，生成 `Cue.app` 或 `Cue.exe`，再按对应平台的方法启动。开发时也可直接按[调试启动](#调试启动)运行桌面应用。仅执行 `npm run dev --prefix frontend` 是浏览器前端预览，不能启动完整的桌面语音功能。
 
 macOS 将 `Cue.app` 放到固定目录后打开。当前产物使用本机临时签名，尚未经过 Apple 公证；Windows 产物也未做商业代码签名。重新构建 macOS 应用可能需要重新授予权限。
 
@@ -112,25 +135,65 @@ node scripts/build.mjs darwin amd64
 
 目前交付与实测的是 Apple Silicon 构建。Intel 路径已提供，但未做 Intel 真机验证。
 
-### 修改代码与测试
+### 调试启动
+
+以下命令都在**项目根目录**执行。先退出已运行的 Cue；应用采用单实例模式，否则调试进程可能只唤醒原来的窗口。
+
+首次调试先准备依赖和前端资源：
+
+```bash
+npm ci --prefix frontend
+go mod download
+npm run build --prefix frontend
+```
+
+**macOS：直接启动完整桌面应用**
+
+```bash
+go run -tags private_mac_apis .
+```
+
+**Windows：在 PowerShell 中启动完整桌面应用**
+
+```powershell
+go run .
+```
+
+这两种方式会运行源码中的桌面应用，便于在终端查看运行输出，无需先生成发行压缩包。关闭应用可点击工具条最右侧的退出按钮。修改 Go 代码后重新执行启动命令；修改前端代码后，先执行 `npm run build --prefix frontend`，再重启桌面应用以加载新资源。
+
+如果还需要调试本地语音转文字，先额外准备一次当前平台的运行时和模型：
+
+```bash
+node scripts/prepare-sherpa.mjs
+
+# 仅 macOS：生成 go run 会查找的 native/bin/cue-audio
+bash native/macos/build.sh
+```
+
+Windows 无需执行最后一条 Bash 命令，音频采集由 Go 代码提供，但需要已安装 WebView2 Runtime。macOS 修改音频组件的 Swift 代码后需重新执行 `bash native/macos/build.sh`。开发运行与 `.app` 的系统权限身份可能不同，最终音频验收推荐使用打包应用。
+
+**只调试前端界面（热更新）**
+
+```bash
+npm run dev --prefix frontend
+```
+
+浏览器打开 [http://127.0.0.1:5173/?preview=1](http://127.0.0.1:5173/?preview=1)，保存前端文件后会自动更新；若端口已占用，以终端显示的地址为准，并加上 `?preview=1`。此模式只预览界面，配置仅保存在页面内存，不连接桌面后端、不采集音频、不调用 AI；完整功能使用上面的桌面启动命令。
+
+### 运行测试
 
 ```bash
 npm run build --prefix frontend
-# macOS 开发运行也需要窗口透明支持；Windows 可直接 go run .
-go run -tags private_mac_apis .
 
 go test -race ./internal/...
 go test ./...
 go vet ./...
-npm run build --prefix frontend
 
 # 浏览器界面测试；首次使用需安装测试浏览器
 cd frontend
 npx playwright install chromium
 npm run test:ui
 ```
-
-开发时原生权限身份可能与 `.app` 不同，测试音频推荐使用打包应用。单独运行前端开发服务器后加 `?preview=1` 可查看带明显标识的界面预览；预览不连接桌面后端、不采集音频，也不会假装完成 AI 请求。
 
 ## 配置 AI 与第三方中转站
 

@@ -39,6 +39,8 @@ let interim: Record<string, string> = {};
 let liveQuestion: { prefix: string; suppressed: boolean } | undefined;
 let questionRevision = 0;
 let pendingConsent = '';
+type ModalKind = 'settings' | 'guide' | 'other';
+let activeModal: ModalKind | undefined;
 let restoreFocus: HTMLElement | null = null;
 let userSpeechStart = 0;
 let softClearTimer: number | undefined;
@@ -60,8 +62,8 @@ $('#app').innerHTML = `
   <div class="desktop collapsed ${preview ? 'preview' : ''}" data-hit-region>
     <header id="toolbar" class="toolbar" data-hit-region aria-label="窗口工具栏">
       <div class="drag-pill drag-region" title="拖动窗口"><span class="drag-dots" aria-hidden="true"></span><span>拖动</span></div>
-      <button id="help" class="tb-logo icon-button" title="使用指南" aria-label="使用指南">${icon('badge-question-mark')}</button>
-      <button id="settings-toggle" class="tb-settings icon-button" title="设置（⌘ / Ctrl + ,）" aria-label="设置">${icon('settings')}</button>
+      <button id="help" class="tb-logo icon-button" title="使用指南" aria-label="使用指南" aria-expanded="false">${icon('badge-question-mark')}</button>
+      <button id="settings-toggle" class="tb-settings icon-button" title="设置（⌘ / Ctrl + ,）" aria-label="设置" aria-expanded="false">${icon('settings')}</button>
       <span class="tb-divider"></span>
       <button id="collapse-toggle" class="tb-hide collapsed" title="显示面板" aria-label="显示面板" aria-expanded="false">${icon('chevron')}<span>显示</span></button>
       <span class="tb-divider"></span>
@@ -442,20 +444,30 @@ function resizeQuestion() {
   scheduleLayout();
 }
 
-function modal(title: string, subtitle = '', wide = false) {
+function setActiveModal(kind?: ModalKind) {
+  activeModal = kind;
+  $('#settings-toggle').setAttribute('aria-expanded', String(kind === 'settings'));
+  $('#help').setAttribute('aria-expanded', String(kind === 'guide'));
+}
+
+function modal(title: string, subtitle = '', wide = false, kind: ModalKind = 'other') {
+  setOpacityOpen(false);
   if (pendingConsent) { const id = pendingConsent; pendingConsent = ''; void run(() => call('Consent', id, false)); }
+  setActiveModal(kind);
   restoreFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const root = $('#modal-root');
   root.innerHTML = `<div class="modal-backdrop" data-hit-region><section class="modal glass ${wide ? 'modal-wide' : ''}" data-hit-region role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><h2 id="modal-title">${esc(title)}</h2>${subtitle ? `<p>${esc(subtitle)}</p>` : ''}</div><button class="icon-button" id="modal-close" title="关闭" aria-label="关闭">${icon('close')}</button></header><div id="modal-body" class="modal-body"></div><footer id="modal-footer" class="modal-footer" hidden></footer></section></div>`;
   $('#modal-close').addEventListener('click', closeModal);
   $('.modal-backdrop').addEventListener('click', event => { if (event.target === event.currentTarget) closeModal(); });
-  $<HTMLButtonElement>('#modal-close').focus();
+  // 宿主此时可能只有菜单条高度，聚焦不能滚动页面并扰乱尺寸上报。
+  $<HTMLButtonElement>('#modal-close').focus({ preventScroll: true });
   return $('#modal-body');
 }
 function closeModal() {
   if (pendingConsent) { const id = pendingConsent; pendingConsent = ''; void run(() => call('Consent', id, false)); }
   $('#modal-root').replaceChildren();
-  if (restoreFocus?.isConnected) restoreFocus.focus();
+  setActiveModal();
+  if (restoreFocus?.isConnected) restoreFocus.focus({ preventScroll: true });
 }
 
 function endpointForm(endpoint: Endpoint, speech: boolean) {
@@ -471,9 +483,10 @@ function endpointForm(endpoint: Endpoint, speech: boolean) {
 }
 
 function openSettings(tab = 'chat') {
+  if (pendingConsent) return;
   if (['chat', 'speech', 'style', 'appearance'].includes(tab)) recordUIEvent('settings-open', tab);
   draft = structuredClone(settings); settingsTab = tab;
-  modal('设置', '', true);
+  modal('设置', '', true, 'settings');
   $('#modal-body').innerHTML = `<div class="settings-layout"><nav class="settings-nav" aria-label="设置分类">${[
     ['chat', 'spark', '密钥'], ['speech', 'mic', '音频'], ['style', 'sliders', '风格'], ['appearance', 'eclipse', '外观'],
   ].map(([id, glyph, title]) => `<button data-tab="${id}" class="${tab === id ? 'active' : ''}">${icon(glyph)}${title}</button>`).join('')}</nav><div id="settings-page" class="settings-page"></div></div>`;
@@ -617,7 +630,8 @@ function renderSlides() {
 }
 
 function showGuide() {
-  const body = modal('欢迎使用 cue', '实时转录对话，快速得到回答');
+  if (pendingConsent) return;
+  const body = modal('欢迎使用 cue', '实时转录对话，快速得到回答', false, 'guide');
   body.innerHTML = `<div class="onboarding"><div class="guide-step"><strong>1. 配置模型与语音</strong><p>在设置中填写 API Key、第三方中转地址和模型名。聊天与语音可分别配置，也可选择 Whisper 本地转写。</p></div><div class="guide-step"><strong>2. 开始会话</strong><p>点击工具条的“开始会话”。开启系统音频后可转录对方的声音。点击“显示”展开回答面板。</p></div><div class="guide-step"><strong>3. 按 Enter 回答</strong><p>对方说的话会填入输入框，按 Enter 或发送按钮获得回答；手工输入时不会被转录覆盖。转录历史按需展开。</p></div><div class="guide-shortcuts"><span>我该怎么说？ <kbd>${status.platform === 'darwin' ? '⌘' : 'Ctrl'} ↵</kbd></span><span>智能辅助 <kbd>${status.platform === 'darwin' ? '⌘' : 'Ctrl'} ⇧ ↵</kbd></span><span>屏幕解题 <kbd>${status.platform === 'darwin' ? '⌘' : 'Ctrl'} H</kbd></span></div><p class="field-hint">截图和云端语音会发送到所选服务。录屏排除效果取决于系统与捕获工具。</p></div>`;
   $('#modal-footer').hidden = false;
   $('#modal-footer').innerHTML = '<button id="guide-later" class="text-button">稍后配置</button><button id="guide-start" class="primary-button">配置模型</button>';
@@ -657,9 +671,9 @@ $('#question').addEventListener('keydown', event => {
 });
 $('#question-reset').addEventListener('click', dismissQuestion);
 $('#cancel-answer').addEventListener('click', () => void run(() => call('Cancel')));
-$('#settings-toggle').addEventListener('click', () => openSettings());
+$('#settings-toggle').addEventListener('click', () => { if (activeModal === 'settings') closeModal(); else openSettings(); });
 $('#more-settings').addEventListener('click', () => openSettings());
-$('#help').addEventListener('click', showGuide);
+$('#help').addEventListener('click', () => { if (activeModal === 'guide') closeModal(); else showGuide(); });
 $('#collapse-toggle').addEventListener('click', () => void run(toggleCollapsed));
 $('#quit').addEventListener('click', () => void run(() => call('Quit')));
 $('#sidebar-toggle').addEventListener('click', toggleSidebar);
@@ -674,9 +688,10 @@ $('#clear-transcript').addEventListener('click', () => void run(async () => {
 }));
 $('#smart-toggle').addEventListener('click', () => void run(async () => { settings = await call<Settings>('SaveSettings', { ...settings, smart: !settings.smart }); renderStatus(); }));
 function setOpacityOpen(open: boolean) {
+  if (open && pendingConsent) return;
+  if (open && activeModal) closeModal();
   $('#opacity-popover').hidden = !open;
   $('#opacity-toggle').setAttribute('aria-expanded', String(open));
-  $('.desktop').classList.toggle('opacity-open', open);
 }
 $('#opacity-toggle').addEventListener('click', () => setOpacityOpen($('#opacity-popover').hidden));
 $('#quick-opacity').addEventListener('input', () => { const value = Number($<HTMLInputElement>('#quick-opacity').value) / 100; document.documentElement.style.setProperty('--cue-opacity', String(value)); $('#opacity-value').textContent = `${Math.round(value * 100)}%`; });

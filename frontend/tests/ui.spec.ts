@@ -29,6 +29,67 @@ async function mockDesktop(page: Page, bounds?: { maxWidth: number; maxHeight: n
   await expect(page.locator('#connection-status')).toContainText('准备就绪');
 }
 
+test('从菜单条高度打开设置时不滚动页面，首次上报完整窗口高度', async ({ page }) => {
+  await page.setViewportSize({ width: 700, height: 78 });
+  await mockDesktop(page, { maxWidth: 1440, maxHeight: 900 });
+  const toolbar = (await page.locator('#toolbar').boundingBox())!;
+  await page.locator('#settings-toggle').click();
+  // 原生窗口仍是收起高度时，聚焦弹窗按钮也不能滚动整张页面。
+  expect(await page.evaluate(() => [window.scrollY, document.documentElement.scrollTop, document.body.scrollTop])).toEqual([0, 0, 0]);
+  expect(await page.locator('#toolbar').boundingBox()).toEqual(toolbar);
+  await expect.poll(() => page.evaluate(() => (window as any).mockCalls.filter((c: any) => c.method === 'SetOverlayLayout').at(-1)?.args[1])).toBe(618);
+  await page.setViewportSize({ width: 700, height: 618 });
+  await expect(page.locator('#modal-close')).toBeFocused();
+  await expect(page.locator('#save-settings')).toBeInViewport();
+  expect(await page.locator('#toolbar').boundingBox()).toEqual(toolbar);
+  await page.locator('#settings-toggle').click();
+  await expect(page.locator('.modal')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => (window as any).mockCalls.filter((c: any) => c.method === 'SetOverlayLayout').at(-1)?.args[1])).toBe(78);
+});
+
+for (const expanded of [false, true]) {
+  test(`透明度弹层开关和调节时菜单条位置不变（${expanded ? '展开' : '收起'}）`, async ({ page }) => {
+    await mockDesktop(page);
+    if (expanded) await page.locator('#collapse-toggle').click();
+    const toolbar = page.locator('#toolbar');
+    const before = await toolbar.boundingBox();
+    const panelBefore = expanded ? await page.locator('#panel').boundingBox() : null;
+    await page.locator('#opacity-toggle').click();
+    await expect(page.locator('#opacity-popover')).toBeVisible();
+    // 记录整个淡入过程，防止只检查动画终点漏掉中途位移。
+    const positions = await toolbar.evaluate(element => new Promise<{ x: number; y: number }[]>(resolve => {
+      const samples: { x: number; y: number }[] = [];
+      const start = performance.now();
+      function sample(now: number) {
+        const { x, y } = element.getBoundingClientRect();
+        samples.push({ x, y });
+        if (now - start < 220) requestAnimationFrame(sample);
+        else resolve(samples);
+      }
+      requestAnimationFrame(sample);
+    }));
+    for (const position of positions) expect(position).toEqual({ x: before!.x, y: before!.y });
+    if (panelBefore) expect(await page.locator('#panel').boundingBox()).toEqual(panelBefore);
+    const popover = (await page.locator('#opacity-popover').boundingBox())!;
+    expect(popover.y).toBeGreaterThanOrEqual(before!.y + before!.height);
+    await expect.poll(() => page.evaluate(({ x, y, width, height }) => {
+      const layout = (window as any).mockCalls.filter((call: any) => call.method === 'SetOverlayLayout').at(-1)?.args;
+      return layout && layout[1] >= y + height && layout[2].some((region: any) =>
+        region.x <= x && region.y <= y && region.x + region.width >= Math.floor(x + width) && region.y + region.height >= Math.floor(y + height));
+    }, popover)).toBeTruthy();
+    const slider = page.locator('#quick-opacity');
+    await slider.focus();
+    await slider.press('ArrowLeft');
+    const value = Number(await slider.inputValue());
+    await expect(page.locator('#opacity-value')).toHaveText(`${value}%`);
+    await expect.poll(() => page.evaluate(() => (window as any).mockSettings.opacity)).toBe(value / 100);
+    expect(await toolbar.boundingBox()).toEqual(before);
+    await page.locator('#opacity-toggle').click();
+    await expect(page.locator('#opacity-popover')).toBeHidden();
+    expect(await toolbar.boundingBox()).toEqual(before);
+  });
+}
+
 test('默认显示悬浮条，回答卡和转录历史按需展开', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));

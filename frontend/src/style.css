@@ -144,11 +144,6 @@ input, textarea {
   --overlay-top: 80px;
 }
 
-.desktop.opacity-open {
-  padding-top: 82px;
-  --overlay-top: 148px;
-}
-
 .desktop > * {
   pointer-events: auto;
 }
@@ -378,7 +373,7 @@ a,
 /* 透明度调节 Popover 气泡 */
 .popover {
   position: absolute;
-  bottom: calc(100% + 10px);
+  top: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 60;
