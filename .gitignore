@@ -1,0 +1,19 @@
+/build/bin/
+/build/cache/
+/.tools/
+/frontend/node_modules/
+/frontend/dist/
+/native/bin/
+*.log
+.DS_Store
+
+# 本机配置、密钥与语音数据不随源码上传
+.env
+.env.*
+!.env.example
+/settings*.json
+/meetings*.json
+/models/
+/logs/
+/.agents/
+/.codex/

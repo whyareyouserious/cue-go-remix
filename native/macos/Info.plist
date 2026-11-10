@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleIdentifier</key><string>io.cuego.audio</string>
+<key>CFBundleName</key><string>Cue 音频采集</string>
+<key>NSMicrophoneUsageDescription</key><string>Cue 使用麦克风转写你的发言，仅在开始会话后采集。</string>
+<key>NSScreenCaptureUsageDescription</key><string>Cue 使用系统音频录制转写会议中对方的发言。</string>
+</dict></plist>

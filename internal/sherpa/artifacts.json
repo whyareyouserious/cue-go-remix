@@ -1,0 +1,70 @@
+{
+  "version": "2.0.1",
+  "onnxruntimeVersion": "1.28.2",
+  "runtimes": {
+    "darwin-arm64": {
+      "filename": "sherpa-onnx-v2.0.1-osx-arm64-shared-no-tts.tar.bz2",
+      "root": "sherpa-onnx-v2.0.1-osx-arm64-shared-no-tts",
+      "bytes": 18663994,
+      "sha256": "4fcc6c77c8d8d2e2f04cfdc17c6fd224c01469b78529370eb9d8e0e5ec97ac79",
+      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/v2.0.1/sherpa-onnx-v2.0.1-osx-arm64-shared-no-tts.tar.bz2",
+      "libraries": [
+        "libsherpa-onnx-c-api.dylib",
+        "libonnxruntime.dylib"
+      ]
+    },
+    "darwin-amd64": {
+      "filename": "sherpa-onnx-v2.0.1-osx-x64-shared-no-tts.tar.bz2",
+      "root": "sherpa-onnx-v2.0.1-osx-x64-shared-no-tts",
+      "bytes": 21058330,
+      "sha256": "029b5ea0a4bd2f0c034a337c0043019323fd06491728d7fc712592e3b558be52",
+      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/v2.0.1/sherpa-onnx-v2.0.1-osx-x64-shared-no-tts.tar.bz2",
+      "libraries": [
+        "libsherpa-onnx-c-api.dylib",
+        "libonnxruntime.dylib"
+      ]
+    },
+    "windows-amd64": {
+      "filename": "sherpa-onnx-v2.0.1-win-x64-shared-MT-Release-no-tts.tar.bz2",
+      "root": "sherpa-onnx-v2.0.1-win-x64-shared-MT-Release-no-tts",
+      "bytes": 25567228,
+      "sha256": "a644dfe2f7944afec9a356d2557c0452380f20ffcf2f8c704653cfce37558596",
+      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/v2.0.1/sherpa-onnx-v2.0.1-win-x64-shared-MT-Release-no-tts.tar.bz2",
+      "libraries": [
+        "sherpa-onnx-c-api.dll",
+        "onnxruntime.dll",
+        "onnxruntime_providers_shared.dll"
+      ]
+    }
+  },
+  "model": {
+    "id": "sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30",
+    "filename": "sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30.tar.bz2",
+    "root": "sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30",
+    "bytes": 132634597,
+    "sha256": "5a2832047ea1f97dd0dc595b816c230c4bafad65cfc0341fa57517cadc50afd0",
+    "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30.tar.bz2",
+    "files": [
+      {
+        "filename": "encoder.int8.onnx",
+        "bytes": 161141793,
+        "sha256": "5ac51e27981bb4dab01bb9be4958453ba50c3b61c063ddda0eab23fd3671aa4f"
+      },
+      {
+        "filename": "decoder.onnx",
+        "bytes": 5165083,
+        "sha256": "06522ad63cec0fdf6809f4e1db9bb4f7d710c34582e3b35db62ac60eccafac7e"
+      },
+      {
+        "filename": "joiner.int8.onnx",
+        "bytes": 1033416,
+        "sha256": "b34584dc6f561089e1d747fedebb3765f2caa72c927ef54d7ca55e5ae40a814b"
+      },
+      {
+        "filename": "tokens.txt",
+        "bytes": 20628,
+        "sha256": "6193c7ea1c96d0d9a1e9652789b40d13a8a913b434a5451e93158f5a09fd6652"
+      }
+    ]
+  }
+}
