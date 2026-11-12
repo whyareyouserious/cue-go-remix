@@ -66,9 +66,11 @@ func (e *APIError) Error() string {
 func temporary(err error) bool { var e *APIError; return errors.As(err, &e) && e.Temporary }
 
 type Client struct {
-	base string
-	http *http.Client
-	err  error
+	base   string
+	origin string
+	http   *http.Client
+	err    error
+	trace  func(string, ...any)
 }
 
 func NewClient(base string, allowHTTP bool) *Client {
@@ -79,18 +81,27 @@ func NewClient(base string, allowHTTP bool) *Client {
 		return c
 	}
 	c.base = strings.TrimRight(u.String(), "/")
+	c.origin = u.Scheme + "://" + u.Host
 	return c
 }
 func (c *Client) request(ctx context.Context, path, token string, body any) (Reply, error) {
+	started := time.Now()
+	status, code, result := 0, -1, "invalid_endpoint"
+	defer func() {
+		c.log("event=license-request origin=%q operation=%s http_status=%d api_code=%d result=%s elapsed_ms=%d",
+			c.origin, licenseOperation(path), status, code, result, time.Since(started).Milliseconds())
+	}()
 	if c.err != nil {
 		return Reply{}, c.err
 	}
 	data, err := json.Marshal(body)
 	if err != nil {
+		result = "encode_request"
 		return Reply{}, &APIError{}
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.base+"/cue/"+path, bytes.NewReader(data))
 	if err != nil {
+		result = "invalid_request"
 		return Reply{}, &APIError{}
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -99,12 +110,16 @@ func (c *Client) request(ctx context.Context, path, token string, body any) (Rep
 	}
 	response, err := c.http.Do(req)
 	if err != nil {
+		result = networkFailure(err)
 		if ctx.Err() != nil {
+			result = networkFailure(ctx.Err())
 			return Reply{}, ctx.Err()
 		}
 		return Reply{}, &APIError{Temporary: true}
 	}
 	defer response.Body.Close()
+	status = response.StatusCode
+	result = "http_status"
 	if response.StatusCode >= 500 || response.StatusCode == 429 || response.StatusCode == 408 {
 		return Reply{}, &APIError{Temporary: true}
 	}
@@ -113,12 +128,15 @@ func (c *Client) request(ctx context.Context, path, token string, body any) (Rep
 	}
 	raw, err := io.ReadAll(io.LimitReader(response.Body, 64*1024+1))
 	if err != nil && ctx.Err() != nil {
+		result = networkFailure(ctx.Err())
 		return Reply{}, ctx.Err()
 	}
 	if len(raw) > 64*1024 {
+		result = "response_too_large"
 		return Reply{}, &APIError{}
 	}
 	if err != nil {
+		result = "response_read"
 		return Reply{}, &APIError{Temporary: true}
 	}
 	var envelope struct {
@@ -126,10 +144,14 @@ func (c *Client) request(ctx context.Context, path, token string, body any) (Rep
 		Data Reply `json:"data"`
 	}
 	if json.Unmarshal(raw, &envelope) != nil || envelope.Code == nil {
+		result = "invalid_response"
 		return Reply{}, &APIError{}
 	}
-	if *envelope.Code != 0 {
+	code = *envelope.Code
+	if code != 0 {
+		result = "business_error"
 		return Reply{}, &APIError{Code: *envelope.Code, Temporary: *envelope.Code == 1302}
 	}
+	result = "ok"
 	return envelope.Data, nil
 }

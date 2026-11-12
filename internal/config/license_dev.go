@@ -11,5 +11,5 @@ func LicenseEndpoint() (string, bool) {
 	if LicenseBaseURL != "" {
 		return LicenseBaseURL, true
 	}
-	return "http://43.142.63.76/api", true
+	return DeployedLicenseBaseURL, true
 }

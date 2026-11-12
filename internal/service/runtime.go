@@ -68,7 +68,7 @@ func New(options Options) (*Runtime, error) {
 	}
 	a.trace("event=app-launch platform=%s", runtime.GOOS)
 	a.models = whisper.NewManager(filepath.Join(options.DataDir, "models"), a.emit)
-	a.license = entitlement.New(ctx, entitlement.Options{BaseURL: options.LicenseURL, AllowHTTP: options.AllowHTTP, Changed: a.licenseChanged})
+	a.license = entitlement.New(ctx, entitlement.Options{BaseURL: options.LicenseURL, AllowHTTP: options.AllowHTTP, Changed: a.licenseChanged, Trace: a.trace})
 	return a, nil
 }
 func (a *Runtime) trace(format string, args ...any) { a.diagnostics.Trace(format, args...) }

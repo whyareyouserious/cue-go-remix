@@ -66,6 +66,9 @@ func (m *Manager) pulse() {
 	}
 	if err == nil {
 		err = validate(reply, mode, false)
+		if err != nil {
+			m.client.log("event=license-validation operation=%s result=invalid_payload", licenseOperation(mode+"/heartbeat"))
+		}
 	}
 	if err != nil {
 		m.failRequest(err, epoch)

@@ -86,6 +86,9 @@ func (m *Manager) activate(credential secure.Credential, save bool) error {
 	reply, err := m.client.request(m.root, credential.Mode+"/activate", "", map[string]string{"licenseKey": credential.LicenseKey, "machineId": m.device, "clientVersion": "0.1.0"})
 	if err == nil {
 		err = validate(reply, credential.Mode, true)
+		if err != nil {
+			m.client.log("event=license-validation operation=%s result=invalid_payload", licenseOperation(credential.Mode+"/activate"))
+		}
 	}
 	m.mu.Lock()
 	stale := epoch != m.epoch || m.closed

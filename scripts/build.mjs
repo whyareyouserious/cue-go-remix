@@ -9,13 +9,14 @@ let licenseURL = '';
 if (configuredLicenseURL) {
   let parsed;
   try { parsed = new URL(configuredLicenseURL); } catch { /* 下面统一报告配置错误，不输出原始地址。 */ }
-  if (!parsed || parsed.protocol !== 'https:' || !parsed.hostname || parsed.username || parsed.password ||
+  const deployedHTTP = parsed?.href.replace(/\/+$/, '') === 'http://43.142.63.76/api';
+  if (!parsed || (parsed.protocol !== 'https:' && !deployedHTTP) || !parsed.hostname || parsed.username || parsed.password ||
       /[\s\u0000-\u001f\u007f'"\\?#]/u.test(configuredLicenseURL)) {
-    throw new Error('CUE_LICENSE_URL 必须是完整 HTTPS API 地址，且不能包含账号、密码、查询参数、片段、空白或引号');
+    throw new Error('CUE_LICENSE_URL 必须是 HTTPS API 地址或已部署的 http://43.142.63.76/api，且不能包含账号、密码、查询参数、片段、空白或引号');
   }
   licenseURL = parsed.href.replace(/\/+$/, '');
 } else {
-  console.warn('未配置 CUE_LICENSE_URL：仍执行编译验证，但生成的正式版会保持未授权，无法激活；分发前请配置 HTTPS 地址重新构建。');
+  console.log('未覆盖 CUE_LICENSE_URL：使用代码中已部署的默认授权 API 入口。');
 }
 const linkerFlags = ['-s', '-w', ...(licenseURL ? ['-X', `cue-go-remix/internal/config.LicenseBaseURL=${licenseURL}`] : [])];
 function run(command, args, env = {}) {

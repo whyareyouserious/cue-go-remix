@@ -1,5 +1,22 @@
 # 验证记录
 
+## 2026-11-12 连接已上线授权服务与诊断日志
+
+用户已部署并启动 `service-duan`。此前发行包没有注入授权地址，正式模式还拒绝现有 HTTP 入口；`go test -tags production ./internal/config` 在修复前明确复现 `endpoint="" allowHTTP=false`。本轮将默认入口设为 `http://43.142.63.76/api`，发行版仅为该固定地址保留 HTTP 兼容，其他地址仍要求 HTTPS；不读取运行时环境变量覆盖发行配置。
+
+已验证：
+
+- 对照 Java 旧接口、Cue 控制器和 WebConfig，确认复用同一服务，Cue 使用 `/api/cue/*`。线上无凭据探针：旧/Cue 激活接口均返回 HTTP 200、业务码 1301；Cue 心跳和注销无 Token 返回 1201。8088 入口的 Cue 路由返回 Nginx 404，默认公网 80 端口正常转发。
+- 修复后通过 `go test -race ./... -timeout 90s`、`go test -race -tags production ./internal/config ./internal/entitlement ./internal/service -timeout 90s` 及 `go vet ./...`。首次受限沙箱执行因缓存和本地监听权限失败；授权后的完整执行通过。
+- 授权日志回归覆盖配置错误、HTTP 404/502、业务码 1007/1302、无效 JSON、成功响应、网络错误、超时，以及 DNS、TLS 证书和拒绝连接的分类；请求/响应/URL 路径/底层异常中的模拟秘密均不写入日志。运行时已验证日志回调接入真实文件日志。
+- 构建脚本语法检查通过，非固定 HTTP 入口、错误 8088 地址、带用户凭据和查询参数的发行地址均在构建前拒绝。
+- `env -u CUE_LICENSE_URL node scripts/build.mjs darwin arm64` 与 `windows amd64` 均通过；两个构建均完成 TypeScript/Vite 编译并包含相同默认地址与日志。未修改前端界面。
+- 使用临时 `production,license_online_probe` 测试，通过真实 `LicenseEndpoint → Manager → Client → Logger` 发出空激活请求，得到 HTTP 200、业务码 1301，且保持未授权。诊断文件为 `/private/tmp/cue-license-20261112/logs/cue.log`，记录 `valid=true http_allowed=true` 与请求状态/耗时；临时测试源码已删除。
+
+本轮只发送空 JSON 和不带 Token 的请求，没有使用卡密、设备标识或管理员凭据，没有领取试用，也未修改生产配置或数据库。接口可达不等于真实激活、绑机、数据库迁移和试用已验收；Windows 仍需真机验证。macOS 工具链存在既有目标系统版本链接警告，构建与测试通过。
+
+日志位置、字段与后续排障方法见 [授权排查说明](license-diagnostics.md)。下面 2026-11-11 的“尚未部署/地址为空”是当时记录，当前状态以上述补记为准。
+
 ## 2026-11-11 项目分层与大文件拆分
 
 按照用户审核后的结构实施，仅整理 Cue 源码；本轮未修改 Java 或管理网页，也未提交、推送或部署。结构与迁移映射见 [项目结构说明](project-structure.md)。

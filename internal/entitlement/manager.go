@@ -16,6 +16,7 @@ type Options struct {
 	Save      func(secure.Credential) error
 	Delete    func() error
 	Changed   func(Status)
+	Trace     func(string, ...any)
 	Now       func() time.Time
 }
 
@@ -60,5 +61,8 @@ func New(parent context.Context, o Options) *Manager {
 		o.Now = time.Now
 	}
 	ctx, cancel := context.WithCancel(parent)
-	return &Manager{opts: o, client: NewClient(o.BaseURL, o.AllowHTTP), root: ctx, cancel: cancel, state: Status{State: "checking", Message: "正在检查本机授权"}}
+	client := NewClient(o.BaseURL, o.AllowHTTP)
+	client.trace = o.Trace
+	client.log("event=license-config origin=%q valid=%t http_allowed=%t", client.origin, client.err == nil, o.AllowHTTP)
+	return &Manager{opts: o, client: client, root: ctx, cancel: cancel, state: Status{State: "checking", Message: "正在检查本机授权"}}
 }

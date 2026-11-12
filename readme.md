@@ -4,9 +4,9 @@
 
 参考 [Blueturboguy07/cue](https://github.com/Blueturboguy07/cue)，使用 **Go + Wails v3 + TypeScript** 重写。支持 **macOS 与 Windows**，可使用自己的 AI API Key、第三方中转站，或本地中文流式识别；也保留 Whisper 分段转写。无需 Electron。Cue 授权需要连接独立的 Java 授权服务；聊天和云端转写仍连接用户选择的 AI 服务，本地中文识别在本机运行。
 
-> 当前版本为 `0.1.0`，卡密接入已完成本地实现与自动验证。授权后端及 HTTPS 入口尚未部署，本地测试通过不代表线上已可激活。历史 macOS 界面和 Windows 交叉编译记录仍保留；本轮授权、双平台构建与真机结果以 [验证说明](docs/verification.md) 为准。
+> 当前版本为 `0.1.0`。2026-11-12 已核对上线的 Java 授权接口，客户端默认连接 `http://43.142.63.76/api`；该固定 HTTP 入口用于兼容现有部署，其他发行地址要求 HTTPS。接口连通不等于真实卡密激活已通过，验证范围见 [验证说明](docs/verification.md)。
 
-人工测试步骤见 [手工测试说明](docs/manual-test.md)。应用在本地 `logs/cue.log` 记录操作类别、保存结果和退出事件，不记录 API Key、接口地址、问题或转录正文。
+人工测试步骤见 [手工测试说明](docs/manual-test.md)。应用在数据目录的 `logs/cue.log` 记录操作类别、授权服务主机、HTTP 状态、业务错误码和耗时，不记录卡密、Token、API Key、完整 URL 或请求响应正文。授权失败时按 [授权排查说明](docs/license-diagnostics.md) 查看日志。
 
 ## 界面与使用流程
 
@@ -49,7 +49,7 @@ Cue 卡密的产品标识为 `appStatus=2`，鼠标宏（0）和自瞄（1）的
 - “设置 → 授权 → 清除本机授权”只清除本机保存的凭据并退出当前授权，**不解除设备绑定，也不恢复试用资格**。重装 Cue 仍识别同一电脑；系统重装或主板更换可能需要管理员解绑。
 - 换机前先退出旧电脑 Cue，由管理员调用解绑接口，再在新电脑激活。管理网页本轮不提供解绑按钮；解绑不作废卡密，妥善保管卡密并避免旧电脑再次激活。
 
-当前授权后端与 HTTPS 入口尚未部署。正式分发需要先完成后端迁移、部署和独立测试，再配置构建地址；不要使用线上账号或卡密执行本地回归。
+授权后端已由用户部署，现有公网 80 端口可以访问 Cue 接口。8088 的 Nginx 规则仅放行旧产品，客户端默认入口不带 `:8088`。真实卡密、绑机、试用与数据库迁移仍需业务验收；本地回归使用隔离测试数据。
 
 ## 启动方式
 
@@ -107,8 +107,7 @@ node scripts/prepare-sherpa.mjs
 # 可选：需要 Whisper 分段转写时，另外准备其运行时
 go run ./cmd/prepare-whisper
 
-# 构建当前平台：先替换为已部署的 HTTPS API 入口
-export CUE_LICENSE_URL='https://license.example.com/api'
+# 构建当前平台，默认连接已经上线的授权服务
 node scripts/build.mjs
 
 # 可选：生成便于分发的 zip
@@ -119,27 +118,28 @@ macOS 的音频组件由 `native/macos/AudioCapture.swift` 编译，构建脚本
 
 ### 授权服务构建配置
 
-所有 `node scripts/build.mjs` 入口（当前平台、`darwin arm64`、`darwin amd64`、`windows amd64`）都读取构建时的 `CUE_LICENSE_URL`，通过 `-X cue-go-remix/internal/config.LicenseBaseURL=...` 固定到正式版。示例域名仅占位，必须换成已部署、证书有效的 HTTPS API 根地址，如 `https://你的域名/api`，不要填写 `/cue/license/activate`。
+所有 `node scripts/build.mjs` 入口（当前平台、`darwin arm64`、`darwin amd64`、`windows amd64`）默认使用 `http://43.142.63.76/api`。需要更换入口时，设置构建时的 `CUE_LICENSE_URL`，通过 `-X cue-go-remix/internal/config.LicenseBaseURL=...` 固定到正式版。填写 API 根地址，不要填写 `/cue/license/activate`，客户端会自动拼接 `/cue/` 和操作路径。
 
-正式构建只接受 HTTPS，不接受账号密码、查询参数、片段或空白；程序使用正常 TLS 证书校验。地址未配置仍可完成编译验证，但生成的正式版无法激活，不能用作可用发行包。正式版不会读取启动时的 `CUE_LICENSE_URL` 来覆盖内置地址；修改地址须重新构建。
+发行版仅对上述固定部署地址兼容 HTTP，其他入口要求 HTTPS；不接受账号密码、查询参数、片段或空白，HTTPS 保持正常证书校验。现有 HTTP 通信不提供传输加密，部署 HTTPS 后可在构建时切换。未设置环境变量会使用默认地址；显式注入空地址仍拒绝授权。正式版不会读取启动时的 `CUE_LICENSE_URL` 来覆盖内置地址，修改地址须重新构建。
 
-在 PowerShell 中设置构建地址并构建 Windows：
+在 PowerShell 中构建 Windows；更换域名时再设置可选覆盖值：
 
 ```powershell
-$env:CUE_LICENSE_URL = 'https://license.example.com/api'
+# 可选，必须替换成已经部署的真实 HTTPS 地址
+# $env:CUE_LICENSE_URL = 'https://license.example.com/api'
 node scripts/build.mjs windows amd64
 ```
 
-GitHub Actions 使用仓库公开变量 `vars.CUE_LICENSE_URL`；该变量只存 API 地址，不存卡密或 Token。未设置该变量时 CI 仍可验证双平台编译，产物保持未授权。`scripts/package.mjs` 只压缩已有产物，不重新注入地址；切换地址后必须先重新运行对应构建命令。
+GitHub Actions 使用仓库公开变量 `vars.CUE_LICENSE_URL`；该变量只存 API 地址，不存卡密或 Token。未设置时使用代码中的默认入口。`scripts/package.mjs` 只压缩已有产物，不重新注入地址；切换地址后必须先重新运行对应构建命令。
 
-`go run` 等不带 `production` 标签的开发启动允许 `CUE_LICENSE_URL=http://127.0.0.1:8088/api`。本地调试应显式设置地址，避免使用代码中的旧 HTTP 联调默认入口。浏览器的 `?preview=1` 仅为界面模拟，不能赋予桌面功能授权。
+`go run` 等不带 `production` 标签的开发启动允许 `CUE_LICENSE_URL=http://127.0.0.1:8088/api`。本地回归应显式指定隔离服务，避免误连默认线上入口。浏览器的 `?preview=1` 仅为界面模拟，不能赋予桌面功能授权。
 
 ### 构建 Windows 版
 
 可以在 Windows 本机或 macOS 上构建 Windows x64：
 
 ```bash
-export CUE_LICENSE_URL='https://license.example.com/api'
+# 默认使用已上线入口；切换域名时再设置 CUE_LICENSE_URL
 node scripts/prepare-sherpa.mjs windows amd64
 # 可选 Whisper 运行时
 go run ./cmd/prepare-whisper -platform windows -arch amd64
@@ -152,7 +152,7 @@ Windows 代码无需 CGO，构建脚本设置 `CGO_ENABLED=0`。交叉编译只�
 ### 构建 macOS 版
 
 ```bash
-export CUE_LICENSE_URL='https://license.example.com/api'
+# 默认使用已上线入口；切换域名时再设置 CUE_LICENSE_URL
 # Apple Silicon
 node scripts/prepare-sherpa.mjs darwin arm64
 # 可选 Whisper 运行时
@@ -339,6 +339,7 @@ Windows 使用 Ctrl，macOS 使用 Cmd：
 | `meetings.json` / `.bak` | 转录、会议纪要与恢复信息 |
 | `models/` | 下载的 Whisper 模型及 `.part` 续传文件 |
 | `applink/` | 本地连接发现文件与调用方授权 |
+| `logs/cue.log` / `logs/cue.previous.log` | 当前诊断日志及启动时超过 1 MiB 后轮换的上一份日志 |
 
 配置与会议文件使用临时文件替换、备份和受限文件权限。聊天/语音 API Key 目前为本机文件明文存储，不是系统钥匙串；普通配置读取只向界面返回“已设置”状态。这些 AI API Key 不会上传给授权服务。Cue 卡密独立保存在系统凭据库，用于向授权服务验证；不写入 `settings.json`。
 
@@ -404,7 +405,7 @@ scripts/build.mjs     双平台构建和打包
 
 **能聊天但不能听写？** 聊天和转写是独立接口。检查“设置 → 音频”里的地址、Key、模型，以及是否支持 `/audio/transcriptions` 或所选实时协议。
 
-**为什么启动显示激活面板？** 需要 Cue 卡密或手动领取试用并联网验证。未配置授权服务的正式构建会保持未授权，需要发行方配置 HTTPS 地址后重新构建。
+**为什么启动显示激活面板？** 需要 Cue 卡密或手动领取试用并联网验证。2026-11-12 之前未配置地址的构建无法激活，应换用新版。若仍失败，查看数据目录 `logs/cue.log` 的 `license-config`、`license-request` 和 `license-validation` 事件。
 
 **为什么验证成功后只有一条工具栏？** 这是默认的紧凑模式。点击“显示”展开回答区，点击“转录历史”查看记录；无需常驻大窗口。
 

@@ -8,7 +8,8 @@ import (
 	"path/filepath"
 )
 
-// 只写固定事件名、枚举值和数值，禁止写入设置、URL、密钥和对话原文。
+// 只写固定事件名、枚举值和数值。授权诊断可记录已校验的协议和主机；
+// 禁止写入用户设置、完整 URL、密钥、请求响应正文和对话原文。
 type Logger struct {
 	file   *os.File
 	logger *log.Logger

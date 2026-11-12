@@ -10,7 +10,7 @@ import (
 func TestDiagnosticsNeverRecordsSettingsSecretsOrArbitraryUIValues(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("CUE_DATA_DIR", dir)
-	a, err := New(Options{DataDir: dir})
+	a, err := New(Options{DataDir: dir, LicenseURL: "https://license.example.test/api"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func TestDiagnosticsNeverRecordsSettingsSecretsOrArbitraryUIValues(t *testing.T)
 			t.Fatal("诊断日志包含敏感内容")
 		}
 	}
-	for _, event := range []string{"settings-save-done", "action=provider-select value=custom", "action=key-focus value=chat"} {
+	for _, event := range []string{`event=license-config origin="https://license.example.test" valid=true`, "settings-save-done", "action=provider-select value=custom", "action=key-focus value=chat"} {
 		if !strings.Contains(text, event) {
 			t.Fatalf("缺少诊断事件 %s", event)
 		}
