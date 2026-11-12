@@ -2,13 +2,13 @@ package assistant
 
 import (
 	"cue-go-remix/internal/model"
-	"cue-go-remix/internal/store"
+	"cue-go-remix/internal/repository"
 	"strings"
 	"testing"
 )
 
 func TestCodingAndSelectedQuestionIsolation(t *testing.T) {
-	s := store.DefaultSettings()
+	s := repository.DefaultSettings()
 	s.Background = "个人秘密"
 	s.AIRules = "回答规则"
 	turns := []model.Turn{{Channel: "them", Text: "会议秘密"}}
@@ -25,7 +25,7 @@ func TestCodingAndSelectedQuestionIsolation(t *testing.T) {
 	}
 }
 func TestEmptyRecapAndRecentLimit(t *testing.T) {
-	s := store.DefaultSettings()
+	s := repository.DefaultSettings()
 	if _, _, e := Build(s, model.AskRequest{Mode: "recap"}, nil, nil, ""); e == nil {
 		t.Fatal("空会议不能生成回顾")
 	}

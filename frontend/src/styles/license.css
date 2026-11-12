@@ -1,0 +1,14 @@
+/* 激活面板沿用现有材质；焦点不改变宿主页面的位置。 */
+.license-panel {
+  position: relative;
+  width: min(440px, calc(var(--column-width) - 28px));
+  margin: 14px auto 0;
+  padding: 20px 24px;
+  max-height: calc(var(--screen-height, 800px) - 38px);
+  overflow-y: auto;
+  --wails-draggable: drag;
+}
+#license-message { font-size: 13px; color: var(--tx-2); line-height: 1.6; }
+#license-form, .license-actions { --wails-draggable: no-drag; }
+#license-activate { width: 100%; }
+.license-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }

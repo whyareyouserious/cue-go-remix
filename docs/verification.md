@@ -1,5 +1,42 @@
 # 验证记录
 
+## 2026-11-11 项目分层与大文件拆分
+
+按照用户审核后的结构实施，仅整理 Cue 源码；本轮未修改 Java 或管理网页，也未提交、推送或部署。结构与迁移映射见 [项目结构说明](project-structure.md)。
+
+- Go 全量 `go test -race ./... -timeout 90s` 与 `go vet ./...` 通过。原应用测试迁至 `service`、布局测试迁至 `desktop`、存储测试迁至 `repository`。新增控制层回归覆盖真实业务层的会议导出、文件选择取消/失败、未授权拒绝提问与录音，以及配置读取脱敏。
+- 前端 TypeScript/Vite 构建、28 项 Playwright 回归全部通过；测试桥接同时检查 `cue-go-remix/internal/controller.App.` 前缀。前端模块依赖检查无循环。新增 Go 检查将前端调用全名与真实 Go 类型路径对照，且防止内部运行时方法暴露给前端。
+- 与拆分前备份逐声明对照：原数据模型 9 个声明、授权管理器 32 个声明完整一致；存储声明除包名外一致（按平台分别核对文件替换函数）。原 `App` 的 29 个公开方法在控制层全部保留。JSON 字段、系统凭据名称、事件名称和用户数据路径未变。
+- CSS 产物仍为 `index-BvCesqKO.css`，与拆分前哈希一致；拆分保持样式内容与覆盖顺序。`provider`、`listening`、`sherpa`、`textnorm`、`platform`、`applink` 的实现与拆分前一致。
+- 实际构建 `node scripts/build.mjs darwin arm64`、`node scripts/build.mjs windows amd64` 均通过。macOS 产物为 arm64 Mach-O，`codesign --verify --deep --strict` 通过；Windows 为 PE32+ GUI x86-64。Windows 仍仅交叉编译，未进行 Windows 真机验证。
+- 用单独临时 Go 探针导入实际 `internal/config`，执行 `production` 构建并注入 `-X cue-go-remix/internal/config.LicenseBaseURL=https://license.example.invalid/api`，验证实际值正确且不能被运行时 HTTP 环境变量覆盖；探针不发送网络请求。此前授权验证记录中的 `main.licenseBaseURL` 为拆分前名称。
+- 17:09 启动重新构建的 macOS 应用，独立数据目录为 `/private/tmp/cue-structure-panel-check`。真实 Wails 页面正常显示“激活 Cue”、卡密输入及三个授权按钮；日志有 `app-ready`、未授权状态及 `700×338` 的窗口布局上报，未出现绑定失败。没有录音、截图、输入卡密或领取试用，拖动和关闭留给用户验收。
+
+本轮产物未配置正式 HTTPS 授权地址，因此停留在激活面板；真实卡密服务、授权后的原生音频与 Windows 设备体验不属于上述通过范围。测试日志位于本机临时目录 `/private/tmp/cue-structure-refactor/`，原生验收日志为 `/private/tmp/cue-structure-panel-check/logs/cue.log`。
+
+## 2026-11-11 Cue 卡密接入（本地实现与自动验证完成）
+
+本轮仅在本地实施，未部署 Java、未执行生产迁移、未发布管理网页或客户端，也未使用线上账号、用户或卡密。授权后端与 HTTPS 入口尚未上线；浏览器模拟通过不表示正式服务已可用。
+
+已完成的验证：
+
+- Cue 界面共 26 项 Playwright 回归通过，使用本地 Wails 模拟桥接，覆盖检查中/待激活、手动试用、重复提交、错误提示、激活后工具条、失效后内容保留、授权设置、模拟状态标识、小视口焦点与既有菜单条回归。未据此宣称原生音频、Keychain 或线上授权通过。
+- 首轮 26 项界面回归通过后，再补充错误换卡事件竞态及系统凭据保存失败提示，授权专项复跑 12/12 通过（原有其他 16 项未受改动）。前端 TypeScript/Vite 构建通过。
+- 管理网页 `/Users/root1/htmlDemo/admin-frontend` 的 `npm run build` 通过（TypeScript + Vite）；仅有既有 bundle 大小提示。
+- 管理网页本地 Chrome mock 回归全部通过：数字/字符串 0、1、2 产品标签；三产品发卡数字请求、默认 0 和结果弹窗；双端产品筛选、0 值传递、清除/重置、分页及桌面/移动切换同步。所有 API 由本地 mock 接管，使用模拟管理员身份，未连接实际后台。桌面与移动截图已目视检查。
+- 管理网页复跑命令：`PLAYWRIGHT_MODULE=/Users/root1/golang_Project/cue-go-remix/frontend/node_modules/@playwright/test/index.mjs node tests/license-products.browser.mjs`，在管理网页目录执行；脚本使用独立临时 Vite 缓存，保留原 `.idea` 和已跟踪依赖缓存改动。
+- 构建脚本语法检查与隔离执行验证通过：10 种非法地址在下载/构建前拒绝，macOS 本机、macOS 交叉构建 Windows、Windows 本机三个入口正确注入地址，未配置时继续编译并提示；命令参数不经 shell 展开。另以本地最小 Go 程序验证真实链接器 `-X main.licenseBaseURL=...` 写入结果。该检查不代替完整 Cue 双平台构建。
+
+- Go 最终 `go test -race ./... -timeout 90s` 全量通过，`go vet ./...` 通过；覆盖未授权拒绝音频及提问、取消回答与纪要、旧会话不能借新授权发纪要、120 秒边界、卡先到期、冻结同卡、错误换卡、慢凭据保存、重定向保护、响应断流与休眠前旧响应失效。休眠与唤醒共用重新验证操作，不依赖 Wails 异步事件的顺序。
+- Java `mvn test package` 通过，16 项隔离测试通过，包含 H2 并发抢绑/领取、旧 0/1 兼容、jti、解绑回滚、120 秒及旧巡检任务、真实 Spring MVC 路由和鉴权、日志脱敏。
+- Go 与实际 Java HTTP 服务完成跨项目联调：使用仅监听回环地址的临时 Java 服务、H2 内存库、虚构设备与测试卡；验证产品拒绝、激活、异机拒绝、同机恢复不延期且轮换 Token、旧 Token 拒绝、心跳、注销及试用。Go 授权管理器也直接调用此服务通过。用例为 `internal/entitlement/java_integration_test.go`（`integration` 标签），只允许显式指定本机地址；临时服务已停止。
+- macOS arm64 `.app`、Swift 音频组件与 Windows x64 EXE 完整构建成功；macOS 临时签名验证通过，Windows 二进制为 PE32+ GUI x86-64。本轮未配置正式 HTTPS 地址，构建产物仅可查看待激活面板，不能作为已接通授权的发行版。
+- macOS 新版已用独立临时配置 `/private/tmp/cue-license-panel-check` 启动。原生可访问性树确认激活面板、卡密输入、激活/试用/重试/退出均显示；日志为 `inactive allowed=false`，宿主调整至 700×338。未自动领取试用、采集音频或调用用户模型服务。随后日志记录到 15:40:13 的 `quit-request → shutdown-start → shutdown-done`，确认正常主动退出；此记录不代表用户已确认全部交互通过。
+
+尚未完成的环境验收：生产同版本 MySQL 迁移、实际部署与 HTTPS、macOS/Windows 真实凭据写入与重启恢复、原生休眠事件、Windows 真机设备与界面。H2 与浏览器模拟不替代这些验收。
+
+构建配置：`scripts/build.mjs` 从 `CUE_LICENSE_URL` 注入正式 HTTPS API 根地址；未配置也可编译，但产物保持未授权，不能激活。CI 使用公开仓库变量 `vars.CUE_LICENSE_URL`。打包脚本只压缩现有产物，必须先以正确地址重新构建。详细命令见 README。
+
 ## 2026-11-10 设置唤起时菜单条上跳
 
 真实日志连续五次打开设置都上报 `558 → 573 → 588 → 603 → 618` 的窗口高度。以 700×78 的收起视口复现后，菜单条纵坐标从 14 px 变成 -46 px：在宿主窗口尚未展开时，`modal()` 聚焦关闭按钮触发了 body 程序滚动，随后窗口扩展逐步消除滚动偏移，表现为向上弹动再回位。之前固定大视口的浏览器测试未覆盖这个时序。
@@ -101,6 +138,8 @@ go test ./...
 go vet ./...
 npm run build --prefix frontend
 npm run test:ui --prefix frontend
+# 示例地址须替换为已部署的 HTTPS 测试/发行入口
+export CUE_LICENSE_URL='https://license.example.com/api'
 node scripts/build.mjs darwin arm64
 node scripts/build.mjs windows amd64
 ```

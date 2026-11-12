@@ -26,4 +26,7 @@ jobs:
       - run: go test ./...
       - run: go run ./cmd/prepare-whisper
       - run: node scripts/build.mjs
+        env:
+          # 公开 API 地址，不是凭据；未配置时仍编译，产物保持未授权。
+          CUE_LICENSE_URL: ${{ vars.CUE_LICENSE_URL }}
       # 验证双平台构建；模型权重许可核实前不发布含模型的压缩包。

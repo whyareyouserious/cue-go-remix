@@ -1,0 +1,207 @@
+/* ==================== 顶部悬浮胶囊工具栏 (Toolbar) ==================== */
+.toolbar {
+  --wails-draggable: drag;
+  cursor: grab;
+  position: relative;
+  z-index: 50;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px;
+  border-radius: 999px;
+  background-color: var(--bg-toolbar);
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.02) 60%, rgba(0, 0, 0, 0.2) 100%),
+    radial-gradient(80% 120% at 50% 0%, rgba(99, 102, 241, 0.18) 0%, transparent 100%);
+  border: 1px solid var(--glass-border-light);
+  box-shadow: var(--glass-rim);
+  -webkit-backdrop-filter: blur(40px) saturate(210%);
+  backdrop-filter: blur(40px) saturate(210%);
+}
+
+.toolbar button {
+  color: var(--tx-2);
+  --wails-draggable: no-drag;
+}
+
+/* 拖动抓手胶囊 */
+.drag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: grab;
+  transition: all 150ms ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.drag-pill:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.drag-pill:active {
+  cursor: grabbing;
+  transform: scale(0.97);
+}
+
+.drag-dots {
+  width: 13px;
+  height: 10px;
+  display: inline-block;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.95) 1.2px, transparent 1.3px);
+  background-size: 4px 4px;
+  background-position: center;
+  opacity: 0.85;
+}
+
+.tb-divider {
+  width: 1px;
+  height: 18px;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.16) 30%, rgba(255, 255, 255, 0.16) 70%, transparent);
+  margin: 0 1px;
+}
+
+.toolbar .tb-logo,
+.toolbar .tb-settings {
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.toolbar .tb-logo:hover,
+.toolbar .tb-settings:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 显示/隐藏面板按钮 */
+.tb-hide {
+  gap: 6px;
+  padding: 5px 12px 5px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tb-hide .icon {
+  width: 14px;
+  height: 14px;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tb-hide.collapsed .icon {
+  transform: rotate(180deg);
+}
+
+.tb-hide:hover,
+.tb-stop:hover,
+.tb-opacity:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+/* 会话开始/结束按钮 */
+.tb-stop {
+  gap: 6px;
+  height: 28px;
+  padding: 0 13px 0 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tb-stop .icon,
+.tb-opacity .icon,
+.tb-quit .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.toolbar .tb-stop.is-live {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.85), rgba(225, 29, 72, 0.9));
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.toolbar .tb-stop.is-live:hover {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 1), rgba(225, 29, 72, 1));
+}
+
+.tb-opacity-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.tb-opacity {
+  border-radius: 999px;
+}
+
+.toolbar .tb-quit {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.toolbar .tb-quit:hover {
+  background: rgba(244, 63, 94, 0.22);
+  color: #fb7185;
+}
+
+/* 透明度调节 Popover 气泡 */
+.popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  width: 196px;
+  background-color: var(--bg-modal);
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  border: 1px solid var(--glass-border-light);
+  border-radius: 16px;
+  box-shadow: var(--glass-rim);
+  animation: popoverFadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.popover label {
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  color: var(--tx-2);
+}
+
+.popover output {
+  color: var(--accent-hi);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+input[type=range] {
+  accent-color: var(--accent);
+  cursor: pointer;
+  height: 4px;
+  border-radius: 2px;
+}

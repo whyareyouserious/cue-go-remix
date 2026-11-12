@@ -13,8 +13,10 @@ async function mockDesktop(page: Page, bounds?: { maxWidth: number; maxHeight: n
     export const Clipboard = { SetText: async text => { window.copied = text; } };
     export const Browser = { OpenURL: async url => { window.openedURL = url; } };
     export const Call = { ByName: async (name, ...args) => {
+      if (!name.startsWith('cue-go-remix/internal/controller.App.')) throw new Error('Wails 绑定名称不匹配：' + name);
       const method = name.split('.').pop(); window.mockCalls.push({method,args});
       if(method === 'GetSettings') return window.mockSettings;
+      if(method === 'GetLicenseStatus') return {state:'license',allowed:true,mode:'license',expiresAt:Date.now()+86400000,graceSeconds:0,message:'授权有效',saved:true};
       if(method === 'SetOverlayLayout') return window.mockBounds;
       if(method === 'SaveSettings') { window.mockSettings = {...args[0]}; return window.mockSettings; }
       if(method === 'GetStatus') return {platform:'darwin',listening:false,busy:false,dataDir:'/tmp/cue-test',transcript:[],slides:[],warnings:[]};

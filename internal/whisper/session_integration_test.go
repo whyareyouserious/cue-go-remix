@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"cue-go-remix/internal/store"
+	"cue-go-remix/internal/repository"
 )
 
 // Opt-in real inference, using a downloaded model and a public speech fixture.
@@ -39,7 +39,7 @@ func TestRealWhisperRuntime(t *testing.T) {
 	if len(pcm) == 0 {
 		t.Fatal("WAV 中没有音频")
 	}
-	settings := store.DefaultSettings()
+	settings := repository.DefaultSettings()
 	settings.WhisperPath = exe
 	settings.Language = "en"
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)

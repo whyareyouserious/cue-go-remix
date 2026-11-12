@@ -1,0 +1,232 @@
+/* ==================== 问答展示与 Markdown ==================== */
+.answer {
+  display: flex;
+  flex-direction: column;
+}
+
+.response-sep {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tx-mut);
+  text-align: center;
+  margin: 16px 0 8px;
+  position: relative;
+}
+
+.response-sep:before,
+.response-sep:after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 28px);
+  height: 1px;
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.response-sep:before { left: 0; }
+.response-sep:after { right: 0; }
+
+/* 用户提问气泡 - 蓝紫渐变磨砂 */
+.user-question {
+  align-self: flex-end;
+  max-width: 78%;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.92) 0%, rgba(99, 102, 241, 0.88) 100%);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 18px 18px 4px 18px;
+  padding: 9px 15px;
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.45;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.answer-header {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  margin-top: 8px;
+}
+
+.answer-state {
+  color: var(--tx-mut);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.copy-answer {
+  margin-left: auto;
+  border-radius: 6px;
+}
+
+.copy-answer .icon {
+  width: 13px;
+  height: 13px;
+}
+
+/* Markdown 排版与阅读体验 */
+.markdown {
+  color: var(--tx-1);
+  font-size: 16.5px;
+  font-weight: 400;
+  line-height: 1.62;
+  letter-spacing: -0.01em;
+  text-align: left;
+  margin: 6px 0 2px;
+  overflow-wrap: anywhere;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.markdown p {
+  margin: 0 0 12px;
+}
+
+.markdown ul,
+.markdown ol {
+  margin: 8px 0 12px;
+  padding-left: 20px;
+}
+
+.markdown li {
+  margin: 4px 0;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  font-size: 1.18em;
+  font-weight: 600;
+  margin: 14px 0 8px;
+  color: #fff;
+}
+
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  font-size: 1.05em;
+  font-weight: 600;
+  margin: 12px 0 6px;
+}
+
+/* 半透明暗烟晶代码块 */
+.markdown pre {
+  position: relative;
+  background: rgba(8, 6, 16, 0.65);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 34px 14px 12px;
+  overflow-x: auto;
+  font: 13px/1.55 var(--mono);
+  margin: 12px 0;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.markdown code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+}
+
+.markdown p code {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 1px 6px;
+  border-radius: 5px;
+  color: #93c5fd;
+}
+
+.markdown a {
+  color: #93c5fd;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.markdown blockquote {
+  border-left: 3px solid var(--accent);
+  margin: 12px 0;
+  padding-left: 14px;
+  color: var(--tx-2);
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: 0 8px 8px 0;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.markdown table {
+  border-collapse: collapse;
+  display: block;
+  overflow: auto;
+  font-size: 13.5px;
+  margin: 10px 0;
+}
+
+.markdown td,
+.markdown th {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 6px 10px;
+}
+
+.markdown th {
+  background: rgba(255, 255, 255, 0.06);
+  font-weight: 600;
+}
+
+.markdown hr {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 16px 0;
+}
+
+.copy-code {
+  position: absolute;
+  right: 8px;
+  top: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--tx-mut);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font: 11px var(--font);
+  font-weight: 500;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.copy-code:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+/* 思考波浪三点动效 */
+.thinking-dots {
+  display: flex;
+  gap: 5px;
+  padding: 8px 0;
+}
+
+.thinking-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-hi);
+  animation: dotBounce 1.2s infinite ease-in-out;
+}
+
+.thinking-dots i:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dots i:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1.15); opacity: 1; }
+}
+
+.answer-error {
+  color: #fca5a5;
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 8px 12px;
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  border-radius: 12px;
+  background: rgba(244, 63, 94, 0.14);
+}

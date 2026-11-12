@@ -27,3 +27,9 @@ export const initialSettings: Settings = {
   whisperModel: 'base', whisperPath: '', whisperThreads: 0, onboarded: false,
   windowX: 0, windowY: 0, windowPositioned: false,
 };
+
+export interface LicenseStatus {
+  state: 'checking' | 'inactive' | 'license' | 'trial' | 'grace' | 'locked';
+  allowed: boolean; mode: string; expiresAt: number; graceSeconds: number;
+  message: string; saved: boolean; maskedKey?: string;
+}
