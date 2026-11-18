@@ -4,6 +4,8 @@
 
 参考 [Blueturboguy07/cue](https://github.com/Blueturboguy07/cue)，使用 **Go + Wails v3 + TypeScript** 重写。支持 **macOS 与 Windows**，可使用自己的 AI API Key、第三方中转站，或本地中文流式识别；也保留 Whisper 分段转写。无需 Electron，也没有本项目运营的云端服务。
 
+当前维护分支为 **`codex/no-license`（无卡密版）**：采用与 `main` 相同的项目分层，启动后直接进入工具条，无需卡密激活或试用。AI 提供商的 API Key 和本地助手调用方权限仍按原流程配置。目录职责及后续维护约定见 [项目结构说明](docs/project-structure.md)。
+
 > 当前版本为 `0.1.0`。macOS 已验证紧凑界面、第三方选择、密钥框聚焦和设置保存重开，Windows x64 已交叉编译。Windows 真机音频与录屏排除、真实云服务连通性尚未验证。详细记录见 [验证说明](docs/verification.md)。
 
 人工测试步骤见 [手工测试说明](docs/manual-test.md)。应用在本地 `logs/cue.log` 记录操作类别、保存结果和退出事件，不记录 API Key、接口地址、问题或转录正文。
@@ -336,13 +338,25 @@ Windows 使用 Ctrl，macOS 使用 Cmd：
 ## 目录
 
 ```text
-main.go / app.go       Wails 桌面入口、绑定与应用编排
-frontend/             中文 TypeScript 界面与浏览器交互测试
+main.go / assets.go   程序入口与前端资源嵌入
+internal/desktop/     Wails 装配、窗口、快捷键与平台交互
+internal/controller/  前端绑定入口、参数转交与文件对话框协调
+internal/service/     问答、听写、会议、纪要及后台任务编排
+internal/repository/  本地 JSON 持久化、备份恢复与配置校验
+internal/model/       设置、会议、事件、状态与窗口数据模型
+internal/config/      本机数据目录解析
+internal/logging/     诊断日志、服务商与错误分类
+frontend/src/api/     桌面桥接与浏览器预览适配
+frontend/src/app/     状态、启动、事件与布局
+frontend/src/features/ 问答、转录、设置等功能模块
+frontend/src/components/ 通用弹窗、提示与图标
+frontend/src/styles/  按界面区域拆分的样式
+frontend/src/utils/   DOM、格式化与安全 Markdown 渲染
+frontend/tests/       浏览器交互测试
 internal/provider/    AI 与语音提供商、中转兼容协议
 internal/listening/   采集生命周期、分段与转写队列
 internal/platform/    macOS / Windows 原生截图与音频
 internal/whisper/     本地模型与推理进程
-internal/store/       本地持久化、备份恢复
 internal/assistant/   功能提示词与页面指纹
 internal/applink/     本地授权连接
 native/macos/         Swift 音频组件
