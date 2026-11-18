@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"cue-go-remix/internal/model"
-	"cue-go-remix/internal/store"
+	"cue-go-remix/internal/repository"
 )
 
 type Session struct {
@@ -71,7 +71,7 @@ func Start(ctx context.Context, settings model.Settings, modelPath string) (*Ses
 	}
 	port := l.Addr().(*net.TCPAddr).Port
 	l.Close()
-	base := "/cue-" + store.ID()
+	base := "/cue-" + repository.ID()
 	url := fmt.Sprintf("http://127.0.0.1:%d%s", port, base)
 	lang := settings.Language
 	if lang == "" {

@@ -13,7 +13,9 @@ async function mockDesktop(page: Page, bounds?: { maxWidth: number; maxHeight: n
     export const Clipboard = { SetText: async text => { window.copied = text; } };
     export const Browser = { OpenURL: async url => { window.openedURL = url; } };
     export const Call = { ByName: async (name, ...args) => {
+      if (!name.startsWith('cue-go-remix/internal/controller.App.')) throw new Error('Wails 绑定名称不匹配：' + name);
       const method = name.split('.').pop(); window.mockCalls.push({method,args});
+      if (/license|trial/i.test(method)) throw new Error('无卡密版不应请求激活或试用：' + method);
       if(method === 'GetSettings') return window.mockSettings;
       if(method === 'SetOverlayLayout') return window.mockBounds;
       if(method === 'SaveSettings') { window.mockSettings = {...args[0]}; return window.mockSettings; }
@@ -28,6 +30,18 @@ async function mockDesktop(page: Page, bounds?: { maxWidth: number; maxHeight: n
   await page.goto('/');
   await expect(page.locator('#connection-status')).toContainText('准备就绪');
 }
+
+test('无卡密版直接进入工具条，模型配置后可直接提问', async ({ page }) => {
+  await mockDesktop(page);
+  await expect(page.locator('#toolbar')).toBeVisible();
+  await expect(page.locator('#session-toggle')).toBeEnabled();
+  await expect(page.locator('#license-panel, #license-status')).toHaveCount(0);
+  await page.locator('#collapse-toggle').click();
+  await page.locator('#question').fill('直接使用无卡密版');
+  await page.locator('#send').click();
+  await expect.poll(() => page.evaluate(() => (window as any).mockCalls.find((call: any) => call.method === 'Ask')?.args[0])).toEqual({ mode: 'ask', text: '直接使用无卡密版' });
+  expect(await page.evaluate(() => (window as any).mockCalls.filter((call: any) => /license|trial/i.test(call.method)))).toEqual([]);
+});
 
 test('从菜单条高度打开设置时不滚动页面，首次上报完整窗口高度', async ({ page }) => {
   await page.setViewportSize({ width: 700, height: 78 });

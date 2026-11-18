@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { cpSync, mkdirSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 const target = process.argv[2] || process.platform;
 const arch = process.argv[3] || (target === 'windows' ? 'amd64' : process.arch === 'arm64' ? 'arm64' : 'amd64');
@@ -9,8 +9,12 @@ function run(command, args, env = {}) {
   if (result.error || result.status !== 0) throw result.error || new Error(`${command} 构建失败`);
 }
 run(process.execPath, ['scripts/prepare-sherpa.mjs', target, arch]);
-if (process.platform === 'win32') run('cmd.exe', ['/d', '/s', '/c', 'npm --prefix frontend run build']);
-else run('npm', ['--prefix', 'frontend', 'run', 'build']);
+// Windows 的 npm.cmd 需要 shell；直接调用随 Node 安装的 npm CLI，构建参数不经 shell 展开。
+if (process.platform === 'win32') {
+  const npmCLI = resolve(dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
+  if (!existsSync(npmCLI)) throw new Error('未找到 npm CLI，请使用包含 npm 的 Node.js 安装重新构建');
+  run(process.execPath, [npmCLI, '--prefix', 'frontend', 'run', 'build']);
+} else run('npm', ['--prefix', 'frontend', 'run', 'build']);
 if (target === 'darwin') {
   if (process.platform !== 'darwin') throw new Error('macOS 版本必须在 macOS 构建');
   const contents = resolve('build/bin/Cue.app/Contents');

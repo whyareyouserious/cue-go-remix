@@ -1,11 +1,27 @@
+# 构建产物与依赖；保留 build/macos 等构建源文件
 /build/bin/
 /build/cache/
 /.tools/
-/frontend/node_modules/
+node_modules/
 /frontend/dist/
 /native/bin/
+/cue-go-remix
+/cue-go-remix.exe
+*.test
+*.test.exe
+*.tsbuildinfo
+
+# 测试覆盖率产物；浏览器截图和报告由 frontend/.gitignore 管理
+/coverage/
+/coverage.out
+
+# 本机 IDE、系统文件与日志
+/.idea/
+/.vscode/
 *.log
 .DS_Store
+Thumbs.db
+Desktop.ini
 
 # 本机配置、密钥与语音数据不随源码上传
 .env
@@ -17,3 +33,4 @@
 /logs/
 /.agents/
 /.codex/
+/.gemini/

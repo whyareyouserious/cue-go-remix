@@ -1,0 +1,168 @@
+/* 会议记忆与页面记录 */
+.meetings-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+.meeting-list {
+  display: flex;
+  overflow-x: auto;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding-bottom: 4px;
+}
+
+.meeting-list button {
+  background: var(--bg-card);
+  color: var(--tx-2);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 10px;
+  padding: 8px 10px;
+  min-width: 140px;
+  text-align: left;
+}
+
+.meeting-list button.active {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+}
+
+.meeting-list strong {
+  display: block;
+  font-size: 12px;
+  color: var(--tx-1);
+}
+
+.meeting-list small {
+  display: block;
+  color: var(--tx-mut);
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.meeting-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.meeting-detail-head h3 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.meeting-detail-head > div {
+  display: flex;
+}
+
+.muted {
+  color: var(--tx-mut);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.meeting-notes {
+  font-size: 14px;
+}
+
+.meeting-transcript {
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+  padding-top: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.meeting-transcript summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--tx-2);
+}
+
+.meeting-transcript p {
+  white-space: pre-wrap;
+  margin: 8px 0;
+}
+
+.meeting-transcript strong {
+  display: block;
+  font-size: 10.5px;
+  color: var(--tx-mut);
+}
+
+.meeting-transcript time {
+  margin-left: 8px;
+}
+
+.slide-card {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.slide-card .eyebrow {
+  color: var(--accent-hi);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.slide-card .markdown {
+  font-size: 14px;
+}
+
+.guide-step {
+  margin: 12px 0 16px;
+}
+
+.guide-step strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tx-1);
+}
+
+.guide-step p {
+  font-size: 12.5px;
+  color: var(--tx-mut);
+  line-height: 1.55;
+  margin: 6px 0 0;
+}
+
+.guide-shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12.5px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.guide-shortcuts kbd {
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font: 11px var(--font);
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+.consent-content {
+  padding: 12px 4px;
+  text-align: center;
+}
+
+.consent-content > .icon {
+  width: 32px;
+  height: 32px;
+  color: var(--accent-hi);
+}
+
+.consent-content h3 {
+  font-size: 16px;
+  margin: 10px 0 6px;
+}
+
+.consent-content p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--tx-2);
+}
