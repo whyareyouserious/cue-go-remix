@@ -4,7 +4,7 @@
 
 参考 [Blueturboguy07/cue](https://github.com/Blueturboguy07/cue)，使用 **Go + Wails v3 + TypeScript** 重写。支持 **macOS 与 Windows**，可使用自己的 AI API Key、第三方中转站，或本地中文流式识别；也保留 Whisper 分段转写。无需 Electron，也没有本项目运营的云端服务。
 
-当前维护分支为 **`codex/no-license`（无卡密版）**：采用与 `main` 相同的项目分层，启动后直接进入工具条，无需卡密激活或试用。AI 提供商的 API Key 和本地助手调用方权限仍按原流程配置。目录职责及后续维护约定见 [项目结构说明](docs/project-structure.md)。
+当前维护分支为 **`no-license`（无卡密版）**：采用与 `main` 相同的项目分层，启动后直接进入工具条，无需卡密激活或试用。AI 提供商的 API Key 和本地助手调用方权限仍按原流程配置。目录职责及后续维护约定见 [项目结构说明](docs/project-structure.md)。
 
 > 当前版本为 `0.1.0`。macOS 已验证紧凑界面、第三方选择、密钥框聚焦和设置保存重开，Windows x64 已交叉编译。Windows 真机音频与录屏排除、真实云服务连通性尚未验证。详细记录见 [验证说明](docs/verification.md)。
 
