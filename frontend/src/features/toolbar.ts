@@ -5,6 +5,7 @@ import { state } from '../app/state';
 import { icon } from '../components/icons';
 import { closeModal } from '../components/modal';
 import { $ } from '../utils/dom';
+import { formatShortcut, getActiveShortcut } from '../utils/shortcut';
 
 export function renderStatus() {
   const label = $('#connection-status');
@@ -20,9 +21,10 @@ export function renderStatus() {
   $('#composer').classList.toggle('listening', state.status.listening);
   $('#model-label').textContent = (state.settings.smart ? state.settings.chat.smartModel : state.settings.chat.model) || '请设置模型';
   $('#audio-description').textContent = `麦克风 · ${state.settings.meetingAudio ? '系统音频开启' : '系统音频关闭'}`;
-  $('#say-key').textContent = state.status.platform === 'darwin' ? '⌘ ↵' : 'Ctrl ↵';
-  $('#assist-key').textContent = state.status.platform === 'darwin' ? '⌘ ⇧ ↵' : 'Ctrl ⇧ ↵';
-  $<HTMLTextAreaElement>('#question').placeholder = `询问屏幕或对话内容，或按 ${state.status.platform === 'darwin' ? '⌘' : 'Ctrl'} ⇧ ↵ 智能辅助`;
+  $('#say-key').textContent = getActiveShortcut('say', true);
+  $('#assist-key').textContent = getActiveShortcut('assist', true);
+  $('#settings-toggle').title = `设置（${formatShortcut('CmdOrCtrl+,')}）`;
+  $<HTMLTextAreaElement>('#question').placeholder = `询问屏幕或对话内容，或按 ${getActiveShortcut('assist', true)} 智能辅助`;
   const slideCount = document.querySelector('#slide-count');
   if (slideCount)
     slideCount.textContent = String((state.status.slides || []).length);

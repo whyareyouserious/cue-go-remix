@@ -12,12 +12,24 @@ import (
 	"cue-go-remix/internal/model"
 )
 
-type Request struct{ System, Text, Image string }
+// Request 承载一次聊天请求；系统指令、用户文本和可选截图均不得写入日志。
+type Request struct {
+	// System 为系统指令，包含当前回答规则及上下文。
+	System string
+	// Text 为本轮用户文本。
+	Text string
+	// Image 为可选的 base64 图片数据 URL，空值表示纯文本请求。
+	Image string
+}
 
-// Chat executes a single request. Image, when present, is a base64 image data URL.
-// onToken receives answer text only; reasoning updates merely trigger onActivity.
+// Chat 按端点协议执行一次请求，返回回答及可能的错误；取消或断流时保留已生成文本。
+// req.Image 必须是 base64 图片数据 URL；onToken 仅收到回答正文，onActivity 只通知接收活动。
 func Chat(ctx context.Context, ep model.Endpoint, req Request, onToken func(string), onActivity func()) (string, error) {
 	ep.Provider = normalizeProvider(ep.Provider)
+	ep.ChatProtocol = strings.ToLower(strings.TrimSpace(ep.ChatProtocol))
+	if err := ep.ValidateChatProtocol(); err != nil {
+		return "", err
+	}
 	if strings.TrimSpace(ep.Model) == "" {
 		return "", errors.New("请先填写聊天模型名")
 	}
@@ -51,6 +63,13 @@ func Chat(ctx context.Context, ep model.Endpoint, req Request, onToken func(stri
 		}
 		payload = map[string]any{"systemInstruction": map[string]any{"parts": []any{map[string]any{"text": req.System}}}, "contents": []any{map[string]any{"role": "user", "parts": parts}}}
 	case "openai", "custom", "azure", "cerebras", "deepseek", "groq", "minimax", "ollama":
+		if ep.ChatProtocol == model.ChatProtocolResponses {
+			address, err = endpointURL(ep, "/responses")
+			if err == nil {
+				payload, err = responsesPayload(ep, req)
+			}
+			break
+		}
 		address, err = endpointURL(ep, "/chat/completions")
 		var content any = req.Text
 		if req.Image != "" {
@@ -100,6 +119,9 @@ func Chat(ctx context.Context, ep model.Endpoint, req Request, onToken func(stri
 		isSSE := strings.Contains(strings.ToLower(contentType), "text/event-stream")
 		if !isSSE && ep.Stream && len(first) > 0 && first[0] != '{' && first[0] != '[' && !strings.Contains(contentType, "json") {
 			isSSE = true
+		}
+		if ep.ChatProtocol == model.ChatProtocolResponses {
+			return readResponses(reader, isSSE, ep.APIKey, emit)
 		}
 		if isSSE {
 			ended := false

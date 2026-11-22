@@ -84,6 +84,11 @@ func (a *Host) ExportMeetingPath(name string) (string, error) {
 	return a.desktop.Dialog.SaveFile().SetFilename(name).AddFilter("Markdown", "*.md").PromptForSingleSelection()
 }
 
+// ExportDiagnosticPath 打开默认文件名为 name 的诊断文件保存对话框；取消返回空路径，失败返回错误。
+func (a *Host) ExportDiagnosticPath(name string) (string, error) {
+	return a.desktop.Dialog.SaveFile().SetFilename(name).AddFilter("JSON 诊断文件", "*.json").PromptForSingleSelection()
+}
+
 // ImportModelPath 选择 Whisper GGML 模型路径；取消返回空路径，系统对话框失败返回错误。
 func (a *Host) ImportModelPath() (string, error) {
 	return a.desktop.Dialog.OpenFile().AddFilter("Whisper GGML 模型", "*.bin").PromptForSingleSelection()

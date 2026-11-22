@@ -63,7 +63,7 @@ docs/            结构、验证与手工测试说明
 
 ## 兼容与调用路径
 
-本机数据目录、`settings.json`、`meetings.json` 及其 JSON 字段保持原有格式，无需迁移。启动时仍补齐已结束会议的缺失纪要；任务取消沿用应用上下文及各任务取消函数。
+本机数据目录、`settings.json` 与 `meetings.json` 保持原位置。多账号设置新增两个渠道池和激活 ID，旧单端点自动转为内存卡片并在保存时写入新格式，详见 [账号设置与绑定接口](channel-settings.md)。启动时仍补齐已结束会议的缺失纪要；任务取消沿用应用上下文及各任务取消函数。
 
 Wails 绑定类型从根包 `App` 移到 `controller.App`，前端完整调用前缀改为 `cue-go-remix/internal/controller.App.`。前后端必须配套构建，不能只更新旧安装包中的一侧。界面预览继续使用 `?preview=1`。
 

@@ -8,7 +8,7 @@ export function mountShell() {
     <header id="toolbar" class="toolbar" data-hit-region aria-label="窗口工具栏">
       <div class="drag-pill drag-region" title="拖动窗口"><span class="drag-dots" aria-hidden="true"></span><span>拖动</span></div>
       <button id="help" class="tb-logo icon-button" title="使用指南" aria-label="使用指南" aria-expanded="false">${icon('badge-question-mark')}</button>
-      <button id="settings-toggle" class="tb-settings icon-button" title="设置（⌘ / Ctrl + ,）" aria-label="设置" aria-expanded="false">${icon('settings')}</button>
+      <button id="settings-toggle" class="tb-settings icon-button" title="设置" aria-label="设置" aria-expanded="false">${icon('settings')}</button>
       <span class="tb-divider"></span>
       <button id="collapse-toggle" class="tb-hide collapsed" title="显示面板" aria-label="显示面板" aria-expanded="false">${icon('chevron')}<span>显示</span></button>
       <span class="tb-divider"></span>
@@ -29,11 +29,11 @@ export function mountShell() {
         <div id="warning-banner" class="notice warning" hidden></div>
         <div id="messages" class="messages" aria-live="polite" aria-relevant="additions text"></div>
         <div class="composer-area">
-          <div id="action-row" class="quick-actions"><button data-mode="say" class="act act-primary">${icon('wand-sparkles')}我该怎么说？ <kbd id="say-key">⌘ ↵</kbd></button><span class="sep">•</span><button data-mode="assist" class="act act-secondary">${icon('screen')}智能辅助 <kbd id="assist-key">⌘ ⇧ ↵</kbd></button><span class="sep">•</span><button data-mode="recap" class="act">${icon('refresh-cw')}回顾</button></div>
+          <div id="action-row" class="quick-actions"><button data-mode="say" class="act act-primary">${icon('wand-sparkles')}我该怎么说？ <kbd id="say-key"></kbd></button><span class="sep">•</span><button data-mode="assist" class="act act-secondary">${icon('screen')}智能辅助 <kbd id="assist-key"></kbd></button><span class="sep">•</span><button data-mode="recap" class="act">${icon('refresh-cw')}回顾</button></div>
           <div id="interim" class="interim" aria-live="polite"></div>
           <form id="composer" class="composer">
             <div id="question-source" class="question-source" hidden>↵ 回答对方的问题 <button type="button" id="question-reset">清空</button></div>
-            <textarea id="question" rows="1" placeholder="询问屏幕或对话内容，或按 ⌘ ⇧ ↵ 智能辅助" aria-label="输入问题" spellcheck="false"></textarea>
+            <textarea id="question" rows="1" placeholder="询问屏幕或对话内容" aria-label="输入问题" spellcheck="false"></textarea>
             <div id="composer-bottom" class="composer-bottom"><button id="smart-toggle" class="smart-pill" type="button" aria-pressed="false">${icon('zap')}智能</button><button id="sidebar-toggle" class="history-btn" type="button" aria-pressed="false">${icon('history')}转录历史</button><button id="more-settings" class="more-btn icon-button" type="button" title="设置" aria-label="更多设置">${icon('more-horizontal')}</button><span id="model-label" class="model-label" hidden></span><span class="spacer"></span><button id="cancel-answer" class="cancel-answer" type="button" hidden>${icon('stop')}停止</button><button id="send" class="send-button" type="submit" disabled title="发送（Enter），换行（Shift + Enter）" aria-label="发送">${icon('play')}</button></div>
           </form>
         </div>

@@ -36,6 +36,9 @@ func Open(dir string) (*Store, error) {
 	if err := readRecover(filepath.Join(dir, "settings.json"), &s.settings); err != nil {
 		return nil, fmt.Errorf("读取设置失败：%w", err)
 	}
+	if err := migrateChannels(&s.settings); err != nil {
+		return nil, fmt.Errorf("读取渠道配置失败：%w", err)
+	}
 	if err := readRecover(filepath.Join(dir, "meetings.json"), &s.meetings); err != nil {
 		return nil, fmt.Errorf("读取会议失败：%w", err)
 	}

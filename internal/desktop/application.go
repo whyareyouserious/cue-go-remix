@@ -16,22 +16,25 @@ import (
 
 // Host 仅管理桌面窗口、快捷键与主线程事件。
 type Host struct {
-	runtime           *service.Runtime
-	desktop           *application.App
-	window            *application.WebviewWindow
-	ctx               context.Context
-	cancel            context.CancelFunc
-	mu                sync.Mutex
-	wg                sync.WaitGroup
-	closing           bool
-	collapsed         bool
-	passthroughReady  bool
-	manualPassthrough bool
-	overlayRegions    []model.OverlayRegion
+	runtime             *service.Runtime
+	desktop             *application.App
+	window              *application.WebviewWindow
+	ctx                 context.Context
+	cancel              context.CancelFunc
+	mu                  sync.Mutex
+	wg                  sync.WaitGroup
+	closing             bool
+	collapsed           bool
+	passthroughReady    bool
+	manualPassthrough   bool
+	savedWindowPos      application.Point
+	temporaryFullscreen bool
+	overlayRegions      []model.OverlayRegion
+	shortcutMu          sync.Mutex
 }
 
-// Run 使用 assets 创建桌面应用并装配 controller、service；初始化或 Wails 运行失败返回错误，退出时统一释放资源。
-func Run(assets fs.FS) error {
+// Run 使用 assets 和 PNG 格式的 icon 创建桌面应用并装配 controller、service；初始化或 Wails 运行失败返回错误，退出时统一释放资源。
+func Run(assets fs.FS, icon []byte) error {
 	dir, err := config.DataDir()
 	if err != nil {
 		return err
@@ -45,6 +48,7 @@ func Run(assets fs.FS) error {
 	}
 	desktop := application.New(application.Options{
 		Name: "Cue", Description: "屏幕与会议 AI 助手",
+		Icon:     icon,
 		Services: []application.Service{application.NewService(controller.New(a.runtime, a))},
 		Assets:   application.AssetOptions{Handler: application.AssetFileServerFS(assets)},
 		// NSPanel 不属于主窗口。WebKit 的临时选择菜单关闭时，不能连带退出悬浮助手。
@@ -64,8 +68,17 @@ func Run(assets fs.FS) error {
 		a.startup()
 	})
 	a.window.OnWindowEvent(events.Common.WindowDidMove, func(_ *application.WindowEvent) {
-		x, y := a.window.Position()
-		a.runtime.Report(a.runtime.SavePosition(x, y))
+		application.InvokeAsync(func() {
+			a.mu.Lock()
+			temp := a.temporaryFullscreen
+			closing := a.closing
+			a.mu.Unlock()
+			if temp || closing {
+				return // 临时全屏透明幕布期间或退出期间在主线程严格串行拦截，坚决不写入持久配置
+			}
+			x, y := a.window.Position()
+			a.runtime.Report(a.runtime.SavePosition(x, y))
+		})
 	})
 	defer a.shutdown()
 	return desktop.Run()

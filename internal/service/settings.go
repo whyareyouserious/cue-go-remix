@@ -16,12 +16,18 @@ func (a *Runtime) SaveSettings(s model.Settings) (model.Settings, error) {
 	a.trace("event=settings-save-start chat=%s speech=%s", logging.Provider(s.Chat.Provider), logging.Provider(s.Speech.Provider))
 	a.listenMu.Lock()
 	defer a.listenMu.Unlock()
+	// 先解析账号池中的实际语音端点，防止仅改变激活 ID 绕过录音期间的配置保护。
+	resolved, err := a.store.PrepareSettings(s)
+	if err != nil {
+		a.trace("event=settings-save-failed reason=validation-or-storage")
+		return model.Settings{}, err
+	}
 	a.mu.Lock()
 	live := a.listening
 	a.mu.Unlock()
 	if live {
 		old := a.store.Settings()
-		if s.Speech != repository.Redact(old).Speech || s.MeetingAudio != old.MeetingAudio || s.WhisperModel != old.WhisperModel || s.WhisperPath != old.WhisperPath || s.Language != old.Language {
+		if resolved.Speech != old.Speech || resolved.MeetingAudio != old.MeetingAudio || resolved.WhisperModel != old.WhisperModel || resolved.WhisperPath != old.WhisperPath || resolved.WhisperThreads != old.WhisperThreads || resolved.Language != old.Language {
 			a.trace("event=settings-save-failed reason=listening")
 			return model.Settings{}, errors.New("请先结束会话再修改音频服务、语言或模型")
 		}

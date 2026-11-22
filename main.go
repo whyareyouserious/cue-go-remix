@@ -12,7 +12,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := desktop.Run(assets); err != nil {
+	if err := desktop.Run(assets, appIcon); err != nil {
 		log.Fatal(err)
 	}
 }

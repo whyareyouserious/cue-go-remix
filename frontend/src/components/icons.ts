@@ -32,5 +32,6 @@ const paths: Record<string, string> = {
   sliders: '<path d="M4 3v18M12 3v18M20 3v18"/><rect x="2" y="7" width="4" height="5" rx="1"/><rect x="10" y="13" width="4" height="5" rx="1"/><rect x="18" y="5" width="4" height="5" rx="1"/>',
   drag: '<circle cx="8" cy="5" r="1"/><circle cx="16" cy="5" r="1"/><circle cx="8" cy="12" r="1"/><circle cx="16" cy="12" r="1"/><circle cx="8" cy="19" r="1"/><circle cx="16" cy="19" r="1"/>',
   arrow: '<path d="M5 12h14m-6-6 6 6-6 6"/>',
+  'arrow-left': '<path d="m12 19-7-7 7-7m-7 7h14"/>',
 };
 export const icon = (name: string, cls = '') => `<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.spark}</svg>`;

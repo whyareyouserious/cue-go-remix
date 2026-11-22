@@ -3,15 +3,18 @@
   position: absolute;
   top: 66px;
   left: 0;
-  width: var(--column-width);
+  width: 100%;
   max-width: 100vw;
   display: flex;
   justify-content: center;
   z-index: 60;
-  padding-bottom: 10px;
-  pointer-events: auto;
-  --wails-draggable: drag;
-  cursor: grab;
+  padding-bottom: 16px;
+  pointer-events: none; /* 背景本身不拦截点击，全透明区域直接穿透桌面 */
+  --wails-draggable: no-drag;
+}
+
+.modal-backdrop > * {
+  pointer-events: auto; /* 仅模态卡片本身捕获交互事件 */
 }
 
 @keyframes fadeIn {
@@ -20,10 +23,10 @@
 }
 
 .modal {
-  --wails-draggable: drag;
-  width: min(480px, 94vw);
+  --wails-draggable: no-drag;
+  width: min(480px, calc(var(--screen-width, 1000px) - 32px));
   padding: 18px 22px 16px;
-  max-height: min(528px, calc(var(--screen-height, 800px) - 80px));
+  max-height: min(528px, calc(var(--screen-height, 800px) - 76px));
   display: flex;
   flex-direction: column;
   pointer-events: auto;
@@ -37,17 +40,90 @@
   border: 1px solid var(--glass-border-light);
   border-radius: 24px;
   box-shadow: var(--glass-rim);
+  transform: translate(var(--modal-tx, 0px), var(--modal-ty, 0px));
+  box-sizing: border-box;
+  will-change: transform;
+}
+
+.modal.is-dragging {
+  cursor: grabbing !important;
+  box-shadow: var(--glass-rim);
+}
+
+/* 宽屏设置卡片：约 900 x 680，基于稳定工作区尺寸 */
+.modal-wide,
+.modal-settings {
+  width: min(900px, calc(var(--screen-width, 1000px) - 32px));
+  max-height: min(680px, calc(var(--screen-height, 800px) - 76px));
+  padding: 20px 26px 16px;
+}
+
+/* 全屏透明画布模式下的弹窗定位：基于 --modal-base-x 与 --modal-tx */
+.overlay-fullscreen #modal-root {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 60;
+}
+
+.overlay-fullscreen .modal-backdrop {
+  position: absolute;
+  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  display: block;
+  pointer-events: none;
+}
+
+.overlay-fullscreen .modal {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(calc(var(--modal-base-x, 0px) + var(--modal-tx, 0px)), calc(var(--modal-base-y, 0px) + var(--modal-ty, 0px)));
+  pointer-events: auto;
 }
 
 .modal-header {
-  --wails-draggable: drag;
+  --wails-draggable: no-drag;
   cursor: grab;
+  user-select: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
   flex-shrink: 0;
+  gap: 12px;
+}
+
+.modal-header.is-dragging {
+  cursor: grabbing;
+}
+
+.modal-header-info {
+  display: flex;
+  align-items: center;
   gap: 10px;
+}
+
+.modal-drag-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tx-mut);
+  opacity: 0.6;
+  transition: opacity 150ms ease, color 150ms ease;
+  margin-top: 1px;
+}
+
+.modal-header:hover .modal-drag-grip {
+  opacity: 1;
+  color: var(--accent-hi);
 }
 
 .modal-header h2 {
@@ -55,10 +131,12 @@
   font-size: 17px;
   font-weight: 600;
   color: var(--tx-1);
+  letter-spacing: -0.01em;
 }
 
-.modal-header p {
-  margin: 4px 0 0;
+.modal-header p,
+.modal-subtitle {
+  margin: 3px 0 0;
   color: var(--tx-mut);
   font-size: 11.5px;
   line-height: 1.4;

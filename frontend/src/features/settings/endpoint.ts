@@ -4,7 +4,8 @@ import { icon } from '../../components/icons';
 import { readSettingsPage } from './form';
 import { recordUIEvent } from '../../app/diagnostics';
 import { state } from '../../app/state';
-import { type Endpoint } from '../../types';
+import { call } from '../../api/wails';
+import type { Endpoint, EndpointCheckResult } from '../../types';
 
 export const providers: Record<string, {
   name: string;
@@ -33,7 +34,14 @@ export function endpointForm(endpoint: Endpoint, speech: boolean) {
     <div class="field"><label for="endpoint-key">API Key <span>${endpoint.hasKey ? '已保存，留空继续使用' : '保存在本机'}</span></label><div class="password-row"><input id="endpoint-key" data-endpoint="apiKey" type="password" value="${esc(endpoint.apiKey)}" placeholder="${endpoint.hasKey ? '••••••••（已保存）' : '输入服务商提供的 API Key'}" autocomplete="new-password" spellcheck="false"/><button id="key-visibility" type="button" class="icon-button" aria-label="显示密钥">${icon('eye')}</button></div><label class="check-label"><input id="clear-endpoint-key" type="checkbox" ${endpoint.clearKey ? 'checked' : ''}/>清除已保存密钥</label></div>
     <div class="field-grid"><div class="field"><label for="endpoint-model">${speech ? '转写模型' : '快速模型'}</label><input id="endpoint-model" data-endpoint="model" value="${esc(endpoint.model)}" placeholder="${speech ? 'whisper-1' : '服务商提供的模型名称'}" spellcheck="false"/></div>${!speech ? `<div class="field"><label for="endpoint-smart">深度思考模型</label><input id="endpoint-smart" data-endpoint="smartModel" value="${esc(endpoint.smartModel)}" placeholder="服务商提供的模型名称" spellcheck="false"/></div>` : ''}</div>
     ${!speech ? `<label class="switch-row"><span><strong>流式回答</strong><small>逐步显示回答；中转不支持时可关闭</small></span><input id="endpoint-stream" type="checkbox" role="switch" ${endpoint.stream ? 'checked' : ''}/></label>` : `<p class="field-hint">语音使用自己的接口与密钥，不会自动复用聊天密钥。</p>${['openai', 'deepgram', 'gemini'].includes(endpoint.provider) ? `<label class="switch-row"><span><strong>实时转写</strong><small>逐步更新文字；需要提供商支持实时语音连接</small></span><input id="endpoint-stream" type="checkbox" role="switch" ${endpoint.stream ? 'checked' : ''}/></label><p class="field-hint">${endpoint.provider === 'gemini' ? '实时模式需要 Gemini Live 模型（例如 gemini-3.5-transcribe-live），普通 Flash 模型用于分段转写。' : endpoint.provider === 'openai' ? '实时模式建议使用 gpt-4o-mini-transcribe；whisper-1 通常只提供最终文字。' : 'nova-3 支持实时和分段转写。'}</p>` : ''}`}` : `<div class="callout">${endpoint.provider === 'sherpa' ? '在本机实时识别中文，说话时持续更新字幕，停顿后确认整句。输出统一为简体中文，无需 API Key；运行时与模型随应用提供。' : '音频留在本机，由 whisper.cpp 分段转写。请在“本地模型”页准备模型和运行时；本地模式不会自动切换到云端。'}</div>`}
-    ${speech ? `<label class="switch-row"><span><strong>采集系统音频</strong><small>捕获会议中对方的声音，与麦克风分开记录</small></span><input data-setting="meetingAudio" type="checkbox" role="switch" ${state.draft.meetingAudio ? 'checked' : ''}/></label><p class="field-hint">macOS 开启后需要屏幕录制权限，并显示系统录屏指示。设备或权限失败会显示错误。</p>` : '<p class="field-hint">模型名称由你的服务商决定。截图问答需要支持图片的模型。</p>'}`;
+    ${speech ? `<label class="switch-row"><span><strong>采集系统音频</strong><small>捕获会议中对方的声音，与麦克风分开记录</small></span><input data-setting="meetingAudio" type="checkbox" role="switch" ${state.draft.meetingAudio ? 'checked' : ''}/></label><p class="field-hint">macOS 开启后需要屏幕录制权限，并显示系统录屏指示。设备或权限失败会显示错误。</p>` : '<p class="field-hint">模型名称由你的服务商决定。截图问答需要支持图片的模型。</p>'}
+    <div class="endpoint-test-box card glass">
+      <div class="endpoint-test-header">
+        <button type="button" id="endpoint-test-btn" class="secondary-button btn-sm">${icon('spark')} 测试服务连接</button>
+        <span class="endpoint-test-tip">仅测试连通性与鉴权，不修改已存配置，不自动开启录音</span>
+      </div>
+      <div id="endpoint-test-result" class="endpoint-test-result" style="display: none;"></div>
+    </div>`;
 }
 
 export function renderEndpointPage(page: HTMLElement, renderPage: () => void) {
@@ -71,4 +79,41 @@ export function renderEndpointPage(page: HTMLElement, renderPage: () => void) {
       if (state.draft.speech.provider === 'openai' && input.value === 'whisper-1' && enabled)
         input.value = 'gpt-4o-mini-transcribe';
     });
+
+  // 测试服务连接处理
+  const testBtn = page.querySelector<HTMLButtonElement>('#endpoint-test-btn');
+  const testResult = page.querySelector<HTMLDivElement>('#endpoint-test-result');
+  testBtn?.addEventListener('click', async () => {
+    readSettingsPage();
+    const kind = state.settingsTab as 'chat' | 'speech';
+    const ep = structuredClone(state.draft[kind]);
+    if (kind === 'speech') {
+      ep.whisperModel = state.draft.whisperModel;
+      ep.whisperPath = state.draft.whisperPath;
+    }
+    testBtn.disabled = true;
+    testBtn.textContent = '正在检测连通性…';
+    if (testResult) {
+      testResult.style.display = 'block';
+      testResult.className = 'endpoint-test-result testing';
+      testResult.textContent = '正在向服务发起探测请求…';
+    }
+    try {
+      const res = await call<EndpointCheckResult>('TestEndpoint', kind, ep);
+      if (testResult) {
+        testResult.className = `endpoint-test-result ${res.success ? 'success' : 'failed'}`;
+        testResult.textContent = res.success ? `✓ ${res.message}` : `✗ ${res.message}`;
+      }
+    } catch (err: unknown) {
+      if (testResult) {
+        testResult.className = 'endpoint-test-result failed';
+        testResult.textContent = `✗ 检测失败: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    } finally {
+      if (testBtn.isConnected) {
+        testBtn.disabled = false;
+        testBtn.innerHTML = `${icon('spark')} 测试服务连接`;
+      }
+    }
+  });
 }

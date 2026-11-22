@@ -209,3 +209,53 @@ a,
 .icon-button:active {
   transform: scale(0.96);
 }
+
+/* ==================== 全屏透明工作区覆盖模式 ==================== */
+#app.overlay-fullscreen {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#app.overlay-fullscreen .desktop {
+  position: absolute;
+  left: var(--toolbar-x, 0px);
+  top: var(--toolbar-y, 0px);
+  width: var(--column-width);
+  margin: 0;
+  pointer-events: auto;
+}
+
+/* 全屏幕布期彻底禁用所有底层元素的原生窗口拖拽，避免拖走整块工作区幕布 */
+#app.overlay-fullscreen,
+#app.overlay-fullscreen *,
+#app.overlay-fullscreen .desktop,
+#app.overlay-fullscreen .drag-region,
+#app.overlay-fullscreen .drag-pill,
+#app.overlay-fullscreen .toolbar,
+#app.overlay-fullscreen .workspace,
+#app.overlay-fullscreen .workspace-drag-area,
+#app.overlay-fullscreen .assistant-panel,
+#app.overlay-fullscreen .transcript-panel {
+  --wails-draggable: no-drag !important;
+}
+
+#app.overlay-fullscreen .desktop,
+#app.overlay-fullscreen .drag-region,
+#app.overlay-fullscreen .drag-pill,
+#app.overlay-fullscreen .workspace-drag-area,
+#app.overlay-fullscreen .assistant-panel {
+  cursor: default !important;
+}
+
+#app.overlay-fullscreen .modal-header {
+  cursor: grab !important;
+}
+
+#app.overlay-fullscreen .modal-header.is-dragging,
+#app.overlay-fullscreen .modal.is-dragging {
+  cursor: grabbing !important;
+}
