@@ -71,4 +71,10 @@ func TestURLSelection(t *testing.T) {
 	if _, err := endpointURL(model.Endpoint{BaseURL: "https://relay.example/v1/audio/transcriptions"}, "/chat/completions"); err == nil {
 		t.Error("不能把语音完整接口拼成聊天路径")
 	}
+	if _, err := endpointURL(model.Endpoint{BaseURL: "https://relay.example/v1/responses"}, "/chat/completions"); err == nil {
+		t.Error("不能把 Responses 完整接口拼成 Chat Completions 路径")
+	}
+	if _, err := endpointURL(model.Endpoint{BaseURL: "https://relay.example/v1/chat/completions"}, "/responses"); err == nil {
+		t.Error("不能把 Chat Completions 完整接口拼成 Responses 路径")
+	}
 }

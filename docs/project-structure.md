@@ -142,3 +142,7 @@ Go 测试放在对应包旁边；树中省略各个 `*_test.go`、前端静态�
 - 正式授权地址链接符号改为 `cue-go-remix/internal/config.LicenseBaseURL`，`scripts/build.mjs` 统一处理。自行编写构建命令时也需使用新符号。
 - 本轮不迁移用户数据；`settings.json`、`meetings.json`、模型目录、系统凭据服务名和 JSON 字段保持原样。样式内容和覆盖顺序保持不变，核心交互仍是实时转录填入输入框后按 Enter 回答。
 - 本轮验证与平台边界见 [验证记录](verification.md)，人工操作步骤见 [手工测试说明](manual-test.md)。
+
+## 设置与渠道配置
+
+设置支持个人风格、快捷键、诊断和独立本地模型管理弹窗；多账号持久化与聊天协议配置见 [账号设置](channel-settings.md)。授权模块继续管理激活、试用、心跳、失效取消和凭据存储。

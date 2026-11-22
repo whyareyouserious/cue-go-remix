@@ -45,7 +45,7 @@ func (a *Runtime) Ask(ask model.AskRequest) error {
 	a.wg.Add(1)
 	a.mu.Unlock()
 	id := repository.ID()
-	a.trace("event=answer-start id=%s provider=%s stream=%t", id, logging.Provider(s.Chat.Provider), s.Chat.Stream)
+	a.trace("event=answer-start id=%s provider=%s protocol=%s stream=%t", id, logging.Provider(s.Chat.Provider), logging.ChatProtocol(s.Chat), s.Chat.Stream)
 	labels := map[string]string{"assist": "智能辅助", "say": "我该怎么说？", "recap": "回顾当前会话", "leetcode": "解答屏幕上的代码题"}
 	text := ask.Text
 	if text == "" {
@@ -64,6 +64,7 @@ func (a *Runtime) Ask(ask model.AskRequest) error {
 			a.captureMu.Unlock()
 			if e != nil {
 				a.trace("event=answer-failed id=%s stage=screenshot", id)
+				a.AddRecentErrorCategory("error", "permission-denied")
 				a.emit(model.Event{Type: "answer-error", ID: id, Text: "无法截取屏幕：" + e.Error()})
 				return
 			}
@@ -74,7 +75,10 @@ func (a *Runtime) Ask(ask model.AskRequest) error {
 		}
 		answer, err := provider.Chat(ctx, ep, req, func(token string) { a.emit(model.Event{Type: "answer-token", ID: id, Text: token}) }, func() { a.emit(model.Event{Type: "thinking", ID: id}) })
 		if err != nil {
-			a.trace("event=answer-failed id=%s stage=provider cancelled=%t kind=%s elapsed_ms=%d", id, ctx.Err() != nil, logging.Error(err), time.Since(started).Milliseconds())
+			a.trace("event=answer-failed id=%s stage=provider protocol=%s cancelled=%t kind=%s category=%s elapsed_ms=%d", id, logging.ChatProtocol(ep), ctx.Err() != nil, logging.Error(err), logging.ErrorCategory(err), time.Since(started).Milliseconds())
+			if !errors.Is(ctx.Err(), context.Canceled) {
+				a.AddRecentErrorCategory("error", classifyError(err))
+			}
 			msg := err.Error()
 			if errors.Is(ctx.Err(), context.Canceled) {
 				msg = "已停止生成"

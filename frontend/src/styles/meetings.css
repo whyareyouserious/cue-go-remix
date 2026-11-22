@@ -113,6 +113,33 @@
   margin: 12px 0 16px;
 }
 
+.modal-wide .onboarding {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 12px 0 16px;
+}
+
+.modal-wide .guide-step {
+  margin: 0;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-wide .guide-shortcuts {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  justify-content: space-around;
+  padding: 14px 0 8px;
+}
+
+.modal-wide .field-hint {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+}
+
 .guide-step strong {
   font-size: 14px;
   font-weight: 600;

@@ -16,7 +16,12 @@ type Desktop interface {
 	SetPassthrough(bool) error
 	Quit()
 	ExportMeetingPath(string) (string, error)
+	// ExportDiagnosticPath 选择诊断报告文件保存路径；取消为空路径，失败返回错误。
+	ExportDiagnosticPath(string) (string, error)
+	// ImportModelPath 选择模型文件；取消为空路径，失败返回错误。
 	ImportModelPath() (string, error)
+	// UpdateShortcuts 更新并重新注册全局快捷键，并在 persistFn 失败时回滚；回滚失败绝不误报已恢复。
+	UpdateShortcuts(map[string]string, func() error) error
 }
 
 func New(runtime *service.Runtime, desktop Desktop) *App {

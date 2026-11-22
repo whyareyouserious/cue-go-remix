@@ -24,7 +24,8 @@ test('设置、指南和透明度互相切换，关闭设置不保存草稿', as
   await page.locator('#settings-toggle').click();
   await expect(page.locator('.modal')).toHaveCount(0);
   await page.locator('#settings-toggle').click();
-  await page.locator('#endpoint-model').fill('未保存的临时模型');
+  await page.locator('[data-tab="style"]').click();
+  await page.locator('[data-profile="role"]').fill('未保存的临时岗位');
   await page.locator('#help').click();
   await expect(page.locator('#modal-title')).toHaveText('欢迎使用 cue');
   await expect(page.locator('#settings-toggle')).toHaveAttribute('aria-expanded', 'false');
@@ -35,7 +36,8 @@ test('设置、指南和透明度互相切换，关闭设置不保存草稿', as
   await page.locator('#settings-toggle').click();
   await expect(page.locator('#opacity-popover')).toBeHidden();
   await expect(page.locator('#opacity-toggle')).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.locator('#endpoint-model')).toHaveValue(initialSettings.chat.model);
+  await page.locator('[data-tab="style"]').click();
+  await expect(page.locator('[data-profile="role"]')).toHaveValue(initialSettings.scenarios[0].profile.role);
   await page.keyboard.press('Escape');
   await expect(page.locator('#settings-toggle')).toHaveAttribute('aria-expanded', 'false');
   await page.locator('#opacity-toggle').click();

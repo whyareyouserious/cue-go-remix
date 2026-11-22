@@ -55,6 +55,26 @@ async function emitLicense(page: Page, status: LicenseStatus) {
   await page.evaluate(status => (window as any).cueEmit({ type: 'license-status', data: status }), status);
 }
 
+test('模型管理子窗打开时授权失效会清理所有设置，重新验证不提交旧草稿', async ({ page }) => {
+  await mockLicenseDesktop(page, licensed);
+  await page.locator('#settings-toggle').click();
+  await page.locator('[data-tab="speech"]').click();
+  await page.locator('#manage-local-models-btn').click();
+  await expect(page.locator('.models-modal-overlay')).toBeVisible();
+  await page.locator('#whisper-model').fill('unsaved-fixture');
+  await emitLicense(page, { ...licensed, state: 'locked', allowed: false, message: '本轮授权已撤销' });
+  await expect(page.locator('#license-panel')).toBeVisible();
+  await expect(page.locator('.modal, .models-modal-overlay, .add-channel-overlay')).toHaveCount(0);
+  expect(await calls(page, ['SaveSettings', 'DownloadModel', 'Ask'])).toEqual([]);
+  await page.locator('#license-retry').click();
+  await expect(page.locator('#toolbar')).toBeVisible();
+  await page.locator('#settings-toggle').click();
+  await page.locator('[data-tab="speech"]').click();
+  await page.locator('#manage-local-models-btn').click();
+  await expect(page.locator('#whisper-model')).toHaveValue(initialSettings.whisperModel);
+  expect(await calls(page, ['SaveSettings'])).toEqual([]);
+});
+
 test('启动检查完成前保持激活面板，禁用授权操作且不采集或发送问题', async ({ page }) => {
   await mockLicenseDesktop(page, inactive, ['GetLicenseStatus']);
   await expect(page.locator('#license-panel')).toBeVisible();

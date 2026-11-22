@@ -155,6 +155,21 @@ func RuntimeDir() (string, error) {
 	return "", errors.New("缺少本地实时语音组件，请使用包含 Sherpa 的完整安装包，或运行 node scripts/prepare-sherpa.mjs")
 }
 
+// Verify 校验 Sherpa 动态库及中文流式模型的完整性与哈希，绝非仅目录存在就报就绪。
+func Verify() (string, error) {
+	dir, err := RuntimeDir()
+	if err != nil {
+		return "", err
+	}
+	if err := verifyModel(dir); err != nil {
+		return "", err
+	}
+	if _, err := loadAPI(dir); err != nil {
+		return "", fmt.Errorf("Sherpa 运行库加载失败：%w", err)
+	}
+	return dir, nil
+}
+
 type decoder interface {
 	NewStream() (uintptr, error)
 	Accept(uintptr, []float32)

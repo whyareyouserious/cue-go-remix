@@ -29,7 +29,23 @@ func (d *dialogDesktop) ExportMeetingPath(name string) (string, error) {
 	return d.path, d.err
 }
 
+func (d *dialogDesktop) ExportDiagnosticPath(name string) (string, error) {
+	d.opened++
+	d.suggested = name
+	return d.path, d.err
+}
+
 func (d *dialogDesktop) ImportModelPath() (string, error) { return d.path, d.err }
+
+func (d *dialogDesktop) UpdateShortcuts(shortcuts map[string]string, persistFn func() error) error {
+	if d.err != nil {
+		return d.err
+	}
+	if persistFn != nil {
+		return persistFn()
+	}
+	return nil
+}
 
 func testController(t *testing.T) (*App, *dialogDesktop) {
 	t.Helper()

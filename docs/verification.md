@@ -1,5 +1,13 @@
 # 验证记录
 
+## 2026-11-23 同步设置、多渠道与 Responses 支持
+
+从无卡密维护分支迁移提交 `16e284e` 的图标、设置面板、个人风格、快捷键、诊断、多渠道配置及 Responses 协议适配。保留 main 的激活入口、试用、心跳、授权上下文、失效取消和正式版授权地址配置；不合并无卡密启动流程。
+
+新增渠道检测与实际问答均受授权控制，Responses 请求继续使用授权上下文，失效后取消正在执行的请求。模型管理子窗打开时失效会清理设置和子窗，重新验证不提交旧草稿。
+
+功能迁移完成后集中验收通过：完整 `go test -race ./...`、`go vet ./...`，以及 `go test -race -tags production ./internal/config ./internal/entitlement ./internal/service -count=1`。界面原 31 项加新增授权失效子窗验收共 32 项通过，窗口几何与延迟回授 13 项通过；延迟回授夹具采用显式屏障，避免固定延时误读未完成的布局。前端生产构建、macOS arm64 正式编译和 Windows amd64 交叉编译通过；没有启动迁移产物或读取真实卡密，Windows 未进行真机验收。
+
 ## 2026-11-12 连接已上线授权服务与诊断日志
 
 用户已部署并启动 `service-duan`。此前发行包没有注入授权地址，正式模式还拒绝现有 HTTP 入口；`go test -tags production ./internal/config` 在修复前明确复现 `endpoint="" allowHTTP=false`。本轮将默认入口设为 `http://43.142.63.76/api`，发行版仅为该固定地址保留 HTTP 兼容，其他地址仍要求 HTTPS；不读取运行时环境变量覆盖发行配置。

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <title>Cue 软件图标</title>
+  <desc>深紫色圆角底上的浅色 C 与三条声波，代表实时语音和智能提示。</desc>
+  <defs>
+    <linearGradient id="tile" x1="194" y1="116" x2="846" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5941AD"/>
+      <stop offset=".48" stop-color="#30215F"/>
+      <stop offset="1" stop-color="#15152E"/>
+    </linearGradient>
+    <radialGradient id="light" cx="0" cy="0" r="1" gradientTransform="translate(292 174) rotate(54) scale(754 687)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A496F3" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#A496F3" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mark" x1="308" y1="274" x2="704" y2="748" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D7D2FF"/>
+    </linearGradient>
+    <linearGradient id="voice" x1="488" y1="406" x2="650" y2="618" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D1FFF5"/>
+      <stop offset="1" stop-color="#85DCD7"/>
+    </linearGradient>
+  </defs>
+  <rect x="96" y="96" width="832" height="832" rx="188" fill="url(#tile)"/>
+  <rect x="96" y="96" width="832" height="832" rx="188" fill="url(#light)"/>
+  <rect x="98" y="98" width="828" height="828" rx="186" stroke="white" stroke-opacity=".14" stroke-width="4"/>
+  <path d="M692 334C649 290 592 266 526 266C390 266 280 376 280 512C280 648 390 758 526 758C592 758 649 734 692 690" stroke="url(#mark)" stroke-width="68" stroke-linecap="round"/>
+  <path d="M484 477V547M560 422V602M636 463V561" stroke="url(#voice)" stroke-width="38" stroke-linecap="round"/>
+</svg>

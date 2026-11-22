@@ -39,6 +39,7 @@ if (target === 'darwin') {
   run('go', ['build', '-tags', 'production,private_mac_apis', '-trimpath', `-ldflags=${linkerFlags.join(' ')}`, '-o', `${contents}/MacOS/Cue`, '.'], { GOOS: 'darwin', GOARCH: arch, CGO_ENABLED: '1', MACOSX_DEPLOYMENT_TARGET: '13.3', CGO_CFLAGS: '-O2 -g -mmacosx-version-min=13.3', CGO_CXXFLAGS: '-O2 -g -mmacosx-version-min=13.3', CGO_LDFLAGS: '-mmacosx-version-min=13.3' });
   run('bash', ['native/macos/build.sh', arch === 'arm64' ? 'arm64' : 'x86_64', `${contents}/Helpers/cue-audio`]);
   cpSync('build/macos/Info.plist', `${contents}/Info.plist`);
+  cpSync('build/icons/cue.icns', `${contents}/Resources/Cue.icns`);
   const whisper = `build/bin/whisper-darwin-${arch}`;
   if (existsSync(whisper)) cpSync(whisper, `${contents}/Resources/whisper`, { recursive: true });
   cpSync(`build/bin/sherpa-darwin-${arch}`, `${contents}/Resources/sherpa`, { recursive: true });
@@ -50,6 +51,7 @@ if (target === 'darwin') {
 } else if (target === 'windows' || target === 'win32') {
   const dir = resolve(`build/bin/windows-${arch}`);
   mkdirSync(dir, { recursive: true });
+  cpSync('build/icons/cue.ico', `${dir}/Cue.ico`);
   run('go', ['build', '-tags', 'production', '-trimpath', `-ldflags=${[...linkerFlags, '-H', 'windowsgui'].join(' ')}`, '-o', `${dir}/Cue.exe`, '.'], { GOOS: 'windows', GOARCH: arch, CGO_ENABLED: '0' });
   const whisper = `build/bin/whisper-windows-${arch}`;
   if (existsSync(whisper)) cpSync(whisper, `${dir}/whisper`, { recursive: true });

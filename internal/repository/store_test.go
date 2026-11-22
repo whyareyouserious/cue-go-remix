@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"cue-go-remix/internal/model"
 )
 
 func TestSecretRoundTripAndHostChange(t *testing.T) {
@@ -30,6 +32,8 @@ func TestSecretRoundTripAndHostChange(t *testing.T) {
 		t.Fatal("同服务空字段应保留密钥")
 	}
 	red.Chat.BaseURL = "https://relay.example/v1"
+	// 该用例验证旧单端点调用；新客户端通过 ChatChannels 编辑渠道。
+	red.ChatChannels = nil
 	if _, e = s.SaveSettings(red); e != nil {
 		t.Fatal(e)
 	}
@@ -107,5 +111,65 @@ func TestStaleMeetingAndRetention(t *testing.T) {
 	}
 	if len(s.Meetings()) != 50 {
 		t.Fatal("保留数量错误")
+	}
+}
+
+func TestSettingsDeepCopy(t *testing.T) {
+	s, e := Open(t.TempDir())
+	if e != nil {
+		t.Fatal(e)
+	}
+	cfg := s.Settings()
+	if len(cfg.Scenarios) == 0 {
+		t.Fatal("默认场景不应为空")
+	}
+	// 修改返回的深拷贝切片
+	cfg.Scenarios[0].Name = "被修改的名字"
+	cfg.Scenarios[0].Profile.Projects = append(cfg.Scenarios[0].Profile.Projects, model.ProjectExperience{Name: "注入项目"})
+
+	// 重新读取 store，确保内部未被污染
+	original := s.Settings()
+	if original.Scenarios[0].Name == "被修改的名字" {
+		t.Fatal("Settings() 未能实现 Scenarios 切片深拷贝")
+	}
+	if len(original.Scenarios[0].Profile.Projects) != 0 {
+		t.Fatal("Settings() 未能实现 Projects 切片深拷贝")
+	}
+}
+
+func TestSaveSettingsPreservesShortcuts(t *testing.T) {
+	s, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	// 先通过专门的 SaveShortcuts 路径更新自定义快捷键
+	customShortcuts := map[string]string{
+		"say":         "CmdOrCtrl+J",
+		"assist":      "CmdOrCtrl+K",
+		"leetcode":    "CmdOrCtrl+L",
+		"toggle":      "CmdOrCtrl+;",
+		"quit":        "CmdOrCtrl+Q",
+		"passthrough": "CmdOrCtrl+P",
+	}
+	if _, err := s.SaveShortcuts(customShortcuts); err != nil {
+		t.Fatal(err)
+	}
+
+	// 模拟普通 SaveSettings 提交了旧的/空白的 draft shortcuts
+	draft := s.Settings()
+	draft.Shortcuts = map[string]string{
+		"say": "CmdOrCtrl+OldDraft",
+	}
+	saved, err := s.SaveSettings(draft)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// 验证已生效的 shortcuts 没有被旧 draft 覆盖
+	if saved.Shortcuts["say"] != "CmdOrCtrl+J" {
+		t.Fatalf("普通 SaveSettings 不应覆盖专门路径生效的快捷键，得到: %s", saved.Shortcuts["say"])
+	}
+	if s.Settings().Shortcuts["say"] != "CmdOrCtrl+J" {
+		t.Fatalf("存储层内部快捷键被意外覆盖，得到: %s", s.Settings().Shortcuts["say"])
 	}
 }

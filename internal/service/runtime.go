@@ -44,6 +44,9 @@ type Runtime struct {
 	emitEvent       func(model.Event)
 	settingsChanged func(model.Settings)
 	notesResumed    bool
+	launchTime      time.Time
+	errorMu         sync.Mutex
+	recentErrors    []model.RecentError
 }
 
 // Options 接受桌面事件出口，业务模块不依赖 Wails 窗口。
@@ -61,7 +64,12 @@ func New(options Options) (*Runtime, error) {
 		return nil, err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	a := &Runtime{ctx: ctx, cancel: cancel, store: s, slides: []model.Slide{}, warnings: []string{}, noting: map[string]bool{}, emitEvent: options.Emit, settingsChanged: options.SettingsChanged}
+	a := &Runtime{
+		ctx: ctx, cancel: cancel, store: s,
+		slides: []model.Slide{}, warnings: []string{}, noting: map[string]bool{},
+		emitEvent: options.Emit, settingsChanged: options.SettingsChanged,
+		launchTime: time.Now(), recentErrors: []model.RecentError{},
+	}
 	a.diagnostics, err = logging.Open(options.DataDir)
 	if err != nil {
 		a.warnings = append(a.warnings, "诊断日志文件无法创建")
@@ -73,9 +81,32 @@ func New(options Options) (*Runtime, error) {
 }
 func (a *Runtime) trace(format string, args ...any) { a.diagnostics.Trace(format, args...) }
 func (a *Runtime) Trace(format string, args ...any) { a.trace(format, args...) }
-func (a *Runtime) Settings() model.Settings         { return a.store.Settings() }
-func (a *Runtime) SavePosition(x, y int) error      { return a.store.SavePosition(x, y) }
 
+// Settings 返回内部完整设置，仅供桌面组装使用，不绑定到前端。
+func (a *Runtime) Settings() model.Settings { return a.store.Settings() }
+
+// DataDir 返回本机配置与日志主目录。
+func (a *Runtime) DataDir() string { return a.store.Dir() }
+
+// UptimeSeconds 返回应用启动以来的运行秒数。
+func (a *Runtime) UptimeSeconds() int64 { return int64(time.Since(a.launchTime).Seconds()) }
+
+// SaveShortcuts 持久化快捷键映射并向桌面发送更新通知。
+func (a *Runtime) SaveShortcuts(shortcuts map[string]string) (model.Settings, error) {
+	v, err := a.store.SaveShortcuts(shortcuts)
+	if err != nil {
+		return v, err
+	}
+	if a.settingsChanged != nil {
+		a.settingsChanged(v)
+	}
+	return v, nil
+}
+
+// SavePosition 将 x、y 作为窗口逻辑像素坐标持久化；写入失败回滚内存中的位置设置。
+func (a *Runtime) SavePosition(x, y int) error { return a.store.SavePosition(x, y) }
+
+// Shutdown 取消初始化、回答、音频及模型任务并等待后台退出，最后关闭诊断日志。
 func (a *Runtime) Shutdown() {
 	a.trace("event=shutdown-start")
 	a.mu.Lock()

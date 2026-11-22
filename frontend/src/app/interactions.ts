@@ -100,6 +100,13 @@ export function bindInteractions() {
         confirmCancel.click();
         return;
       }
+      const topOverlayClose = document.querySelector<HTMLButtonElement>(
+        '.models-modal-overlay .close-btn, .models-modal-overlay #models-modal-done, .add-channel-overlay .close-btn, .add-channel-overlay #add-channel-cancel'
+      );
+      if (topOverlayClose) {
+        topOverlayClose.click();
+        return;
+      }
       if ($('#modal-root').childElementCount)
         closeModal();
       else {
@@ -108,7 +115,7 @@ export function bindInteractions() {
       }
     }
     if (event.key === 'Tab' && ($('#modal-root').childElementCount || document.querySelector('.confirm-backdrop'))) {
-      const container = document.querySelector('.confirm-backdrop') || $('#modal-root');
+      const container = document.querySelector('.confirm-backdrop') || document.querySelector('.models-modal-overlay') || $('#modal-root');
       const focusable = Array.from(container.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), textarea, select, a[href]')).filter(e => e.offsetParent !== null);
       if (!focusable.length)
         return;
@@ -188,8 +195,14 @@ export function bindInteractions() {
         if (!await confirmAction(`删除模型 ${data.modelDelete}？之后可以重新下载。`))
           return; await call('DeleteModel', data.modelDelete); await loadModels();
       });
-    if (data.revoke)
-      void run(async () => { await call('RevokeCaller', data.revoke); renderSettingsPage(); });
+    if (data.revoke) {
+      const callerList = document.querySelector('#caller-list');
+      void run(async () => {
+        await call('RevokeCaller', data.revoke);
+        // 返回其他设置页后，迟到的撤销结果不能重绘页面并覆盖正在编辑的草稿。
+        if (callerList?.isConnected && state.settingsTab === 'access') renderSettingsPage();
+      });
+    }
   });
   $('#license-form').addEventListener('submit', event => { event.preventDefault(); void licenseAction('ActivateLicense', $<HTMLInputElement>('#license-key').value); });
   $('#license-trial').addEventListener('click', () => void licenseAction('StartTrial'));
